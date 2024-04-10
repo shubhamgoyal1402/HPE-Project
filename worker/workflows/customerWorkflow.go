@@ -138,15 +138,15 @@ func Activity2(ctx context.Context, id int) (string, error) {
 
 	switch id {
 	case 1, 4:
-		Q1.SortStudents()
+		Q1.SortCustomers()
 		//Q1.Display()
 		return "Queue 1 sorted", nil
 	case 2, 5:
-		Q2.SortStudents()
+		Q2.SortCustomers()
 		//Q2.Display()
 		return "Queue 2 sorted", nil
 	case 3, 6:
-		Q3.SortStudents()
+		Q3.SortCustomers()
 		//Q3.Display()
 		return "Queue 3 sorted", nil
 	}
