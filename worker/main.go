@@ -78,6 +78,7 @@ func start() {
 
 	}
 }
+
 func executeCommand(command string) {
 	cmd := exec.Command("cmd", "/c", command)
 	cmd.Stdout = os.Stdout
@@ -92,6 +93,7 @@ func executeCommand(command string) {
 	}
 
 }
+
 func worker2() {
 
 	for a > -1 {
