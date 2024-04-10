@@ -24,7 +24,7 @@ func (a ByPriority) Len() int           { return len(a) }
 func (a ByPriority) Less(i, j int) bool { return a[i].priority < a[j].priority }
 func (a ByPriority) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-func (q *Queue) SortStudents() {
+func (q *Queue) SortCustomers() {
 	sort.Sort(ByPriority(q.customers))
 }
 
