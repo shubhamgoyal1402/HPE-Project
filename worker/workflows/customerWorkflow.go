@@ -14,11 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// Initializing the Response Queue for worker 1, 2 and 3
 var Response_Queue1 = Queue.Queue2{}
 var Response_Queue2 = Queue.Queue2{}
 var Response_Queue3 = Queue.Queue2{}
 
 var s = 0
+
+// Initializing the task Queue for Process 1, 2 and 3
 var Q1 = Queue.Queue{
 
 	Size: 10,
@@ -34,21 +37,16 @@ var Q3 = Queue.Queue{
 }
 
 func init() {
-
+	// Registering workflow and activtiy
 	workflow.Register(customerWorkflow)
-	//activity.Register(taskEnqueueActivity)
 	activity.Register(Activity1)
 	activity.Register(Activity3)
 	activity.Register(Activity2)
-	//activity.Register(activty2)
+
 }
 
-/**
- * This is the hello world workflow sample.
- */
-
-// ApplicationName is the task list for this sample
-const TaskListName = "Service_buy_process"
+// Task_List Name
+const TaskListName = "Service_process"
 
 func customerWorkflow(ctx workflow.Context, id int) error {
 	ao := workflow.ActivityOptions{
@@ -57,10 +55,12 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 		HeartbeatTimeout:       time.Minute * 60,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
-	wid := workflow.GetInfo(ctx).WorkflowExecution.ID // to get the Workflow id
-	//fmt.Println(wid)
+
+	// To get the Workflow id
+	wid := workflow.GetInfo(ctx).WorkflowExecution.ID
+
 	logger := workflow.GetLogger(ctx)
-	logger.Info("helloworld workflow started")
+	logger.Info("Customer workflow started")
 	var Result string
 
 	err := workflow.ExecuteActivity(ctx, Activity1, wid, id).Get(ctx, &Result)
@@ -86,7 +86,7 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 }
 
 func Activity1(ctx context.Context, workflow_id string, id int) (string, error) {
-
+	//Enququeing in task queue Q1,Q2,Q3 Based on ID-service dependent
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 1 started")
 
@@ -101,11 +101,7 @@ func Activity1(ctx context.Context, workflow_id string, id int) (string, error) 
 		ans, err := activtiy1_fn(workflow_id, id, &Q3)
 		return ans, err
 	}
-	//k, err := q1.Peek()
 
-	//if err != nil {
-	//	logger.Panic(err.Error())
-	//}
 	return "Completed", nil
 }
 
@@ -121,18 +117,11 @@ func activtiy1_fn(workflow_id string, id int, q *Queue.Queue) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	//fmt.Println(q)
-	//q.SortStudents()
-
-	//fmt.Println(q)
-
-	//	ans := fmt.Sprintf("The worklfow with request %d is enqueued", id)
-
 	return ans, err
 }
 
 func Activity2(ctx context.Context, id int) (string, error) {
-
+	// To sort the Queue based on priority algorithm
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 2 started")
 
@@ -154,7 +143,7 @@ func Activity2(ctx context.Context, id int) (string, error) {
 	return "Activity 2 Completed", nil
 }
 func Activity3(ctx context.Context, wid string, id int) (string, error) {
-
+	// Waiting for signal to get complete
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 2 started")
 
