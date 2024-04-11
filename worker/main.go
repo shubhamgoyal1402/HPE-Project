@@ -18,7 +18,7 @@ const numWorkflows = 10
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
 const domain = "day20-domain"
-const taskList = "Service_buy_process"
+const taskList = "Service_process"
 const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.customerWorkflow"
 
 var task_counter1 = 0
