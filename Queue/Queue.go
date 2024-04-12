@@ -62,7 +62,7 @@ func (q *Queue) Enqueue(c customer) (bool, error) {
 
 func (q *Queue) Dequeue() (string, error) {
 	if len(q.customers) == 0 {
-		return "No workflow ID ", errors.New("Queue is empty")
+		return " ", errors.New("Queue is empty")
 	}
 	c := q.customers[0]
 	q.customers = q.customers[1:]
