@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
-	"os"
-	"os/exec"
+
 	"time"
 
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/adapters/cadenceAdapter"
@@ -13,13 +11,6 @@ import (
 	"go.uber.org/cadence/worker"
 	"go.uber.org/zap"
 )
-
-const numWorkflows = 10
-const cadenceCLIImage = "ubercadence/cli:master"
-const cadenceAddress = "host.docker.internal:7933"
-const domain = "day20-domain"
-const taskList = "Service_process"
-const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.customerWorkflow"
 
 var task_counter1 = 0
 var task_counter2 = 0
@@ -55,54 +46,56 @@ func main() {
 	go worker2()
 	go worker3()
 
-	time.Sleep(time.Second * 10)
-	go start()
+	//time.Sleep(time.Second * 10)
+	//go start()
 
 	fmt.Println("All workers are readyy ")
-	// The workers are supposed to be long running process that should not exit.
+	// The workers are supposed to beS long running process that should not exit.
+
 	select {}
 }
 
+/*
 func start() {
 
-	for i := 1; i <= numWorkflows; i++ {
-		// Generate a random workflow input
-		randomNumber := rand.Intn(6) + 1
-		fmt.Println(randomNumber)
-		dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d",
-			cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, randomNumber)
-		executeCommand(dockerCmd)
+		for i := 1; i <= numWorkflows; i++ {
+			// Generate a random workflow input
+			randomNumber := rand.Intn(6) + 1
+			fmt.Println(randomNumber)
+			dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d",
+				cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, randomNumber)
+			executeCommand(dockerCmd)
 
-		// Execute Docker command
-		//	fmt.Println("Executing Docker command:", dockerCmd)
+			// Execute Docker command
+			//	fmt.Println("Executing Docker command:", dockerCmd)
 
-	}
-}
-
-func executeCommand(command string) {
-	cmd := exec.Command("cmd", "/c", command)
-	cmd.Stdout = os.Stdout
-
-	//cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-
-		//fmt.Printf("Error executing Docker command: %v\n", err)
-		os.Exit(1)
+		}
 	}
 
-}
+	func executeCommand(command string) {
+		cmd := exec.Command("cmd", "/c", command)
+		cmd.Stdout = os.Stdout
 
+		//cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+		if err != nil {
+
+			//fmt.Printf("Error executing Docker command: %v\n", err)
+			os.Exit(1)
+		}
+
+}
+*/
 func worker2() {
 
 	for a > -1 {
-		if task_counter2 < 6 {
+		if task_counter2 < 5 {
 
 			task_counter2++
 			go testing2()
 		} else {
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Second)
 		}
 
 	}
@@ -112,11 +105,11 @@ func worker2() {
 func worker3() {
 
 	for b > -1 {
-		if task_counter3 < 6 {
+		if task_counter3 < 5 {
 			task_counter3++
 			go testing3()
 		} else {
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Second)
 		}
 
 	}
@@ -125,11 +118,11 @@ func worker3() {
 func worker1() {
 
 	for c > -1 {
-		if task_counter1 < 6 {
+		if task_counter1 < 5 {
 			task_counter1++
 			go testing1()
 		} else {
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Second)
 		}
 
 	}
@@ -145,8 +138,8 @@ func testing2() {
 
 		workflows.Response_Queue2.Enqueue2(response2)
 
-		fmt.Println("signal sent to Response queue 1")
-		time.Sleep(time.Millisecond * 500)
+		fmt.Println("signal sent to Response queue 2")
+		time.Sleep(time.Millisecond)
 
 	}
 	task_counter2--
@@ -163,7 +156,7 @@ func testing3() {
 		workflows.Response_Queue3.Enqueue2(response3)
 
 		fmt.Println("signal sent to Response queue 3")
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond)
 
 	}
 	task_counter3--
@@ -180,7 +173,7 @@ func testing1() {
 		workflows.Response_Queue1.Enqueue2(response1)
 
 		fmt.Println("signal sent to Response queue 1")
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond)
 
 	}
 	task_counter1--
