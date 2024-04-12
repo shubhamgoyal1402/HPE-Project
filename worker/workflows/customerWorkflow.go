@@ -142,6 +142,7 @@ func Activity2(ctx context.Context, id int) (string, error) {
 
 	return "Activity 2 Completed", nil
 }
+
 func Activity3(ctx context.Context, wid string, id int) (string, error) {
 	// Waiting for signal to get complete
 	logger := activity.GetLogger(ctx)
@@ -163,6 +164,8 @@ func Activity3(ctx context.Context, wid string, id int) (string, error) {
 }
 
 func Activity3_fn(wid string, q2 *Queue.Queue2) (string, error) {
+
+	time.Sleep(time.Second * 9)
 	for s > -1 {
 
 		response := q2.SearchAndRemove(wid)
