@@ -46,7 +46,6 @@ func init() {
 }
 
 // Task_List Name
-const TaskListName = "Service_process"
 
 func customerWorkflow(ctx workflow.Context, id int) error {
 	ao := workflow.ActivityOptions{
@@ -58,12 +57,13 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 
 	// To get the Workflow id
 	wid := workflow.GetInfo(ctx).WorkflowExecution.ID
+	rid := workflow.GetInfo(ctx).WorkflowExecution.RunID
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Customer workflow started")
 	var Result string
 
-	err := workflow.ExecuteActivity(ctx, Activity1, wid, id).Get(ctx, &Result)
+	err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
 	if err != nil {
 		logger.Error("Activity failed.", zap.Error(err))
 		return err
@@ -85,33 +85,33 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 	return nil
 }
 
-func Activity1(ctx context.Context, workflow_id string, id int) (string, error) {
+func Activity1(ctx context.Context, workflow_id string, rid string, id int) (string, error) {
 	//Enququeing in task queue Q1,Q2,Q3 Based on ID-service dependent
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 1 started")
 
 	switch id {
 	case 1, 4:
-		ans, err := activtiy1_fn(workflow_id, id, &Q1)
+		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q1)
 		return ans, err
 	case 2, 5:
-		ans, err := activtiy1_fn(workflow_id, id, &Q2)
+		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q2)
 		return ans, err
 	case 3, 6:
-		ans, err := activtiy1_fn(workflow_id, id, &Q3)
+		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q3)
 		return ans, err
 	}
 
 	return "Completed", nil
 }
 
-func activtiy1_fn(workflow_id string, id int, q *Queue.Queue) (string, error) {
+func activtiy1_fn(ctx context.Context, workflow_id string, id int, rid string, q *Queue.Queue) (string, error) {
 
 	for q.GetLength() >= q.Size/2 {
 		time.Sleep(time.Millisecond)
 	}
 
-	customer1 := Queue.New(workflow_id, id)
+	customer1 := Queue.New(workflow_id, rid, ctx, id)
 	ans := fmt.Sprintf("Enqueud at %s", time.Now())
 	_, err := q.Enqueue(customer1)
 	if err != nil {
@@ -165,7 +165,8 @@ func Activity3(ctx context.Context, wid string, id int) (string, error) {
 
 func Activity3_fn(wid string, q2 *Queue.Queue2) (string, error) {
 
-	time.Sleep(time.Second * 9)
+	time.Sleep(time.Second * 8)
+
 	for s > -1 {
 
 		response := q2.SearchAndRemove(wid)
@@ -176,6 +177,7 @@ func Activity3_fn(wid string, q2 *Queue.Queue2) (string, error) {
 
 		time.Sleep(time.Millisecond)
 	}
+
 	return "Cant complete", errors.New("error")
 
 }
