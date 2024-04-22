@@ -18,7 +18,7 @@ import (
 var Response_Queue1 = Queue.Queue2{}
 var Response_Queue2 = Queue.Queue2{}
 var Response_Queue3 = Queue.Queue2{}
-
+var boolans = true
 var s = 0
 
 // Initializing the task Queue for Process 1, 2 and 3
@@ -171,7 +171,7 @@ func Activity3_fn(wid string, q2 *Queue.Queue2) (string, error) {
 
 		response := q2.SearchAndRemove(wid)
 
-		if response == true {
+		if response == boolans {
 			return "Task Completed", nil
 		}
 
