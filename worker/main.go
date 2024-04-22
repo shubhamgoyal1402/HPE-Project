@@ -3,14 +3,29 @@ package main
 import (
 	"fmt"
 
+	"log"
+	"net/http"
+	"os"
+	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/adapters/cadenceAdapter"
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/config"
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows"
+
 	"go.uber.org/cadence/worker"
 	"go.uber.org/zap"
 )
+
+const cadenceCLIImage = "ubercadence/cli:master"
+const cadenceAddress = "host.docker.internal:7933"
+const domain = "day32-domain"
+const taskList = "Service_process"
+
+const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.customerWorkflow"
+
+var TaskListName = "Service_process"
 
 var task_counter1 = 0
 var task_counter2 = 0
@@ -41,7 +56,8 @@ func main() {
 	var cadenceClient cadenceAdapter.CadenceAdapter
 	cadenceClient.Setup(&appConfig.Cadence)
 
-	startWorkers(&cadenceClient, workflows.TaskListName)
+	startWorkers(&cadenceClient, TaskListName)
+
 	go worker1()
 	go worker2()
 	go worker3()
@@ -50,43 +66,26 @@ func main() {
 	//go start()
 
 	fmt.Println("All workers are readyy ")
-	// The workers are supposed to beS long running process that should not exit.
 
-	select {}
-}
+	fileServer := http.FileServer(http.Dir("./static")) // this will automatically look for index.html file
 
-/*
-func start() {
+	http.Handle("/", fileServer)
 
-		for i := 1; i <= numWorkflows; i++ {
-			// Generate a random workflow input
-			randomNumber := rand.Intn(6) + 1
-			fmt.Println(randomNumber)
-			dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d",
-				cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, randomNumber)
-			executeCommand(dockerCmd)
+	http.HandleFunc("/form", formHandler)
 
-			// Execute Docker command
-			//	fmt.Println("Executing Docker command:", dockerCmd)
+	fmt.Printf("Starting server at 8080 port\n")
 
-		}
+	err := http.ListenAndServe(":8080", nil)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	func executeCommand(command string) {
-		cmd := exec.Command("cmd", "/c", command)
-		cmd.Stdout = os.Stdout
-
-		//cmd.Stderr = os.Stderr
-
-		err := cmd.Run()
-		if err != nil {
-
-			//fmt.Printf("Error executing Docker command: %v\n", err)
-			os.Exit(1)
-		}
-
+	// The workers are supposed to beS long running process that should not exit.
+	time.Sleep(time.Hour)
+	//select {}
 }
-*/
+
 func worker2() {
 
 	for a > -1 {
@@ -129,8 +128,7 @@ func worker1() {
 }
 
 func testing2() {
-
-	response2, err2 := workflows.Q2.Dequeue()
+	response2, _, _, err2 := workflows.Q2.Dequeue()
 
 	if err2 == nil {
 
@@ -143,11 +141,12 @@ func testing2() {
 
 	}
 	task_counter2--
+
 }
 
 func testing3() {
 
-	response3, err3 := workflows.Q3.Dequeue()
+	response3, _, _, err3 := workflows.Q3.Dequeue()
 
 	if err3 == nil {
 
@@ -164,7 +163,7 @@ func testing3() {
 
 func testing1() {
 
-	response1, err1 := workflows.Q1.Dequeue()
+	response1, _, _, err1 := workflows.Q1.Dequeue()
 
 	if err1 == nil {
 
@@ -177,4 +176,43 @@ func testing1() {
 
 	}
 	task_counter1--
+}
+func formHandler(w http.ResponseWriter, r *http.Request) {
+
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Fprintf(w, "Parse form error : %v", err)
+		return
+	}
+
+	fmt.Fprintf(w, "Request For %s Service Submitted\n", r.FormValue("name"))
+
+	Name := r.FormValue("name")
+	id := r.FormValue("service_id")
+	requestid, err := strconv.Atoi(id)
+	if err != nil {
+		panic(err)
+	}
+
+	dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d", cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, requestid)
+	executeCommand(dockerCmd)
+
+	fmt.Fprintf(w, "Service Name = %s\n", Name)
+	fmt.Fprintf(w, "Request ID= %s\n", id)
+
+}
+
+func executeCommand(command string) {
+	cmd := exec.Command("cmd", "/c", command)
+	cmd.Stdout = os.Stdout
+
+	//cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+
+		//fmt.Printf("Error executing Docker command: %v\n", err)
+		os.Exit(1)
+	}
+
 }
