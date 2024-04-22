@@ -1,6 +1,7 @@
 package Queue
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -8,12 +9,16 @@ import (
 
 type customer struct {
 	wid      string
+	rid      string
+	ctx      context.Context
 	priority int
 }
 
-func New(wid string, priority int) customer {
+func New(wid string, rid string, ctx context.Context, priority int) customer {
 	return customer{
 		wid:      wid,
+		rid:      rid,
+		ctx:      ctx,
 		priority: priority,
 	}
 }
@@ -60,13 +65,13 @@ func (q *Queue) Enqueue(c customer) (bool, error) {
 	return false, nil
 }
 
-func (q *Queue) Dequeue() (string, error) {
+func (q *Queue) Dequeue() (string, string, context.Context, error) {
 	if len(q.customers) == 0 {
-		return " ", errors.New("Queue is empty")
+		return " ", " ", nil, errors.New("Queue is empty")
 	}
 	c := q.customers[0]
 	q.customers = q.customers[1:]
-	return c.wid, nil
+	return c.wid, c.rid, c.ctx, nil
 }
 
 func (q *Queue) GetLength() int {
