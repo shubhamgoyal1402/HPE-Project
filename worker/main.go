@@ -20,7 +20,7 @@ import (
 
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
-const domain = "day32-domain"
+const domain = "day36-domain"
 const taskList = "Service_process"
 
 const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.customerWorkflow"
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	// The workers are supposed to beS long running process that should not exit.
-	time.Sleep(time.Hour)
+	time.Sleep(time.Hour * 8)
 	//select {}
 }
 
