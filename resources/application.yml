@@ -1,5 +1,5 @@
 env: "development"
 cadence:
-  domain: "day32-domain"
+  domain: "day36-domain"
   service: "cadence-frontend"
   hostPort: "127.0.0.1:7933"
