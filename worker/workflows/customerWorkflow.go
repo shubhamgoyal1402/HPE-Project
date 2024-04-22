@@ -108,7 +108,7 @@ func Activity1(ctx context.Context, workflow_id string, rid string, id int) (str
 func activtiy1_fn(ctx context.Context, workflow_id string, id int, rid string, q *Queue.Queue) (string, error) {
 
 	for q.GetLength() >= q.Size/2 {
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Millisecond * 5)
 	}
 
 	customer1 := Queue.New(workflow_id, rid, ctx, id)
