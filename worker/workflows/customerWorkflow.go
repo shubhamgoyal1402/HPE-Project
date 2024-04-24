@@ -98,6 +98,8 @@ func Activity1(ctx context.Context, workflow_id string, rid string, id int) (str
 	case 3, 6:
 		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q3)
 		return ans, err
+	default:
+		return "Error Service not available ", errors.ErrUnsupported
 	}
 
 	return "Completed", nil
