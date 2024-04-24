@@ -45,8 +45,6 @@ func init() {
 
 }
 
-// Task_List Name
-
 func customerWorkflow(ctx workflow.Context, id int) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToStartTimeout: time.Minute * 60,
@@ -55,7 +53,7 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	// To get the Workflow id
+	// To get the Workflow ID and run ID
 	wid := workflow.GetInfo(ctx).WorkflowExecution.ID
 	rid := workflow.GetInfo(ctx).WorkflowExecution.RunID
 
@@ -121,6 +119,7 @@ func activtiy1_fn(ctx context.Context, workflow_id string, id int, rid string, q
 }
 
 func Activity2(ctx context.Context, id int) (string, error) {
+
 	// To sort the Queue based on priority algorithm
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 2 started")
@@ -128,15 +127,15 @@ func Activity2(ctx context.Context, id int) (string, error) {
 	switch id {
 	case 1, 4:
 		Q1.SortCustomers()
-		//Q1.Display()
+
 		return "Queue 1 sorted", nil
 	case 2, 5:
 		Q2.SortCustomers()
-		//Q2.Display()
+
 		return "Queue 2 sorted", nil
 	case 3, 6:
 		Q3.SortCustomers()
-		//Q3.Display()
+
 		return "Queue 3 sorted", nil
 	}
 
@@ -144,6 +143,7 @@ func Activity2(ctx context.Context, id int) (string, error) {
 }
 
 func Activity3(ctx context.Context, wid string, id int) (string, error) {
+
 	// Waiting for signal to get complete
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activty 2 started")
