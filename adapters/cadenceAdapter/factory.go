@@ -1,4 +1,3 @@
-// app/adapters/cadenceadapter/factory.go
 package cadenceAdapter
 
 import (
