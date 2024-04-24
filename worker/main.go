@@ -20,12 +20,9 @@ import (
 
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
-const domain = "day36-domain"
+const domain = "day40-domain"
 const taskList = "Service_process"
-
 const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.customerWorkflow"
-
-var TaskListName = "Service_process"
 
 var task_counter1 = 0
 var task_counter2 = 0
@@ -56,7 +53,7 @@ func main() {
 	var cadenceClient cadenceAdapter.CadenceAdapter
 	cadenceClient.Setup(&appConfig.Cadence)
 
-	startWorkers(&cadenceClient, TaskListName)
+	startWorkers(&cadenceClient, taskList)
 
 	go worker1()
 	go worker2()
