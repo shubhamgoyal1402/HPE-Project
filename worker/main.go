@@ -186,12 +186,16 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	if requestid < 1 || requestid > 6 {
+		fmt.Fprintf(w, "Service not available for ID %s", id)
+	} else {
 
-	dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d", cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, requestid)
-	executeCommand(dockerCmd)
+		dockerCmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow start --et 1000 --tl %s --wt %s --input %d", cadenceCLIImage, cadenceAddress, domain, taskList, workflowType, requestid)
+		executeCommand(dockerCmd)
 
-	fmt.Fprintf(w, "Service Name = %s\n", Name)
-	fmt.Fprintf(w, "Request ID= %s\n", id)
+		fmt.Fprintf(w, "Service Name = %s\n", Name)
+		fmt.Fprintf(w, "Request ID= %s\n", id)
+	}
 
 }
 
