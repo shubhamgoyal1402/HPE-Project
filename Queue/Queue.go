@@ -44,7 +44,7 @@ func (q *Queue2) Enqueue2(item string) {
 func (q *Queue2) SearchAndRemove(item string) bool {
 	for i, v := range q.items {
 		if v == item {
-			// Remove the item from the slice
+
 			q.items = append(q.items[:i], q.items[i+1:]...)
 			return true
 		}
