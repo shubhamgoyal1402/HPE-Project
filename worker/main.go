@@ -59,12 +59,9 @@ func main() {
 	go worker2()
 	go worker3()
 
-	//time.Sleep(time.Second * 10)
-	//go start()
-
 	fmt.Println("All workers are readyy ")
 
-	fileServer := http.FileServer(http.Dir("./static")) // this will automatically look for index.html file
+	fileServer := http.FileServer(http.Dir("./static"))
 
 	http.Handle("/", fileServer)
 
@@ -78,18 +75,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// The workers are supposed to beS long running process that should not exit.
+	// The workers are supposed to be long running process that should not exit.
 	time.Sleep(time.Hour * 8)
 	//select {}
 }
+func worker1() {
 
+	for c > -1 {
+		if task_counter1 < 5 {
+			task_counter1++
+			go PrivateCloudEnterpriseServiceProcessing()
+		} else {
+			time.Sleep(time.Second)
+		}
+
+	}
+}
 func worker2() {
 
 	for a > -1 {
 		if task_counter2 < 5 {
 
 			task_counter2++
-			go testing2()
+			go NetworkingServiceProcessing()
 		} else {
 			time.Sleep(time.Second)
 		}
@@ -103,7 +111,7 @@ func worker3() {
 	for b > -1 {
 		if task_counter3 < 5 {
 			task_counter3++
-			go testing3()
+			go BlockStorageServiceProcessing()
 		} else {
 			time.Sleep(time.Second)
 		}
@@ -111,20 +119,8 @@ func worker3() {
 	}
 
 }
-func worker1() {
 
-	for c > -1 {
-		if task_counter1 < 5 {
-			task_counter1++
-			go testing1()
-		} else {
-			time.Sleep(time.Second)
-		}
-
-	}
-}
-
-func testing2() {
+func NetworkingServiceProcessing() {
 	response2, _, _, err2 := workflows.Q2.Dequeue()
 
 	if err2 == nil {
@@ -141,7 +137,7 @@ func testing2() {
 
 }
 
-func testing3() {
+func BlockStorageServiceProcessing() {
 
 	response3, _, _, err3 := workflows.Q3.Dequeue()
 
@@ -158,7 +154,7 @@ func testing3() {
 	task_counter3--
 }
 
-func testing1() {
+func PrivateCloudEnterpriseServiceProcessing() {
 
 	response1, _, _, err1 := workflows.Q1.Dequeue()
 
@@ -203,12 +199,9 @@ func executeCommand(command string) {
 	cmd := exec.Command("cmd", "/c", command)
 	cmd.Stdout = os.Stdout
 
-	//cmd.Stderr = os.Stderr
-
 	err := cmd.Run()
 	if err != nil {
 
-		//fmt.Printf("Error executing Docker command: %v\n", err)
 		os.Exit(1)
 	}
 
