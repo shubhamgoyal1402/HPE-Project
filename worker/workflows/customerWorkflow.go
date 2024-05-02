@@ -4,48 +4,33 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
-	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/Queue"
-	"go.uber.org/cadence/activity"
-
+	"log"
 	"time"
+
+	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"go.uber.org/cadence/activity"
 
 	"go.uber.org/cadence/workflow"
 	"go.uber.org/zap"
 )
 
-// Initializing the Response Queue for worker 1, 2 and 3
-var Response_Queue1 = Queue.Queue2{}
-var Response_Queue2 = Queue.Queue2{}
-var Response_Queue3 = Queue.Queue2{}
-var boolans = true
-var s = 0
-
-// Initializing the task Queue for Process 1, 2 and 3
-var Q1 = Queue.Queue{
-
-	Size: 10,
-}
-
-var Q2 = Queue.Queue{
-
-	Size: 10,
-}
-var Q3 = Queue.Queue{
-
-	Size: 10,
-}
-
 func init() {
 	// Registering workflow and activtiy
-	workflow.Register(customerWorkflow)
+
+	workflow.Register(CustomerWorkflow)
 	activity.Register(Activity1)
-	activity.Register(Activity3)
-	activity.Register(Activity2)
 
 }
 
-func customerWorkflow(ctx workflow.Context, id int) error {
+const (
+	address = "localhost:50051"
+)
+
+func CustomerWorkflow(ctx workflow.Context, id int) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToStartTimeout: time.Minute * 60,
 		StartToCloseTimeout:    time.Minute * 60,
@@ -66,16 +51,20 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 		logger.Error("Activity failed.", zap.Error(err))
 		return err
 	}
-	err2 := workflow.ExecuteActivity(ctx, Activity2, id).Get(ctx, &Result)
-	if err2 != nil {
-		logger.Error("Activity failed.", zap.Error(err2))
-		return err2
-	}
 
-	err3 := workflow.ExecuteActivity(ctx, Activity3, wid, id).Get(ctx, &Result)
-	if err3 != nil {
-		logger.Error("Activity failed.", zap.Error(err3))
-		return err3
+	var signalName = wid
+	var signalVal string
+	signalChan := workflow.GetSignalChannel(ctx, signalName)
+
+	s := workflow.NewSelector(ctx)
+	s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
+		c.Receive(ctx, &signalVal)
+		workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
+	})
+	s.Select(ctx)
+
+	if len(signalVal) > 0 && signalVal != wid {
+		return errors.New(wid)
 	}
 
 	logger.Info("Workflow completed.", zap.String("Result", Result))
@@ -83,103 +72,30 @@ func customerWorkflow(ctx workflow.Context, id int) error {
 	return nil
 }
 
-func Activity1(ctx context.Context, workflow_id string, rid string, id int) (string, error) {
-	//Enququeing in task queue Q1,Q2,Q3 Based on ID-service dependent
-	logger := activity.GetLogger(ctx)
-	logger.Info("Activty 1 started")
-
-	switch id {
-	case 1, 4:
-		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q1)
-		return ans, err
-	case 2, 5:
-		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q2)
-		return ans, err
-	case 3, 6:
-		ans, err := activtiy1_fn(ctx, workflow_id, id, rid, &Q3)
-		return ans, err
-	default:
-		return "Error Service not available ", errors.ErrUnsupported
-	}
-
-	return "Completed", nil
-}
-
-func activtiy1_fn(ctx context.Context, workflow_id string, id int, rid string, q *Queue.Queue) (string, error) {
-
-	for q.GetLength() >= q.Size/2 {
-		time.Sleep(time.Millisecond * 5)
-	}
-
-	customer1 := Queue.New(workflow_id, rid, ctx, id)
-	ans := fmt.Sprintf("Enqueud at %s", time.Now())
-	_, err := q.Enqueue(customer1)
+func Activity1(ctx context.Context, workflow_id string, rid string, id int32) (string, error) {
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
-		panic(err)
-	}
-	return ans, err
-}
+		log.Fatalf("did not connect %v", err)
 
-func Activity2(ctx context.Context, id int) (string, error) {
-
-	// To sort the Queue based on priority algorithm
-	logger := activity.GetLogger(ctx)
-	logger.Info("Activty 2 started")
-
-	switch id {
-	case 1, 4:
-		Q1.SortCustomers()
-
-		return "Queue 1 sorted", nil
-	case 2, 5:
-		Q2.SortCustomers()
-
-		return "Queue 2 sorted", nil
-	case 3, 6:
-		Q3.SortCustomers()
-
-		return "Queue 3 sorted", nil
 	}
 
-	return "Activity 2 Completed", nil
-}
-
-func Activity3(ctx context.Context, wid string, id int) (string, error) {
-
-	// Waiting for signal to get complete
-	logger := activity.GetLogger(ctx)
-	logger.Info("Activty 2 started")
-
-	switch id {
-	case 1, 4:
-		ans, err := Activity3_fn(wid, &Response_Queue1)
-		return ans, err
-	case 2, 5:
-		ans, err := Activity3_fn(wid, &Response_Queue2)
-		return ans, err
-	case 3, 6:
-		ans, err := Activity3_fn(wid, &Response_Queue3)
-		return ans, err
+	defer conn.Close()
+	c := pb.NewRequestManagementClient(conn)
+	req := &pb.NewRequest{
+		Wid: workflow_id, // workflow ID
+		Rid: rid,         // run ID
+		Id:  int32(id),   // request ID
 	}
 
-	return "Activity 3 Completed", nil
-}
+	ctx2, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel() // Ensure the context is canceled when done
 
-func Activity3_fn(wid string, q2 *Queue.Queue2) (string, error) {
-
-	time.Sleep(time.Second * 8)
-
-	for s > -1 {
-
-		response := q2.SearchAndRemove(wid)
-
-		if response == boolans {
-			return "Task Completed", nil
-		}
-
-		time.Sleep(time.Millisecond)
+	resp, err2 := c.CreateRequest(ctx2, req)
+	if err2 != nil {
+		log.Fatalf("failed to create request: %v", err2)
 	}
 
-	return "Cant complete", errors.New("error")
+	ans := fmt.Sprintf("Request created with Wid: %v", resp.GetWid())
 
+	return ans, nil
 }
