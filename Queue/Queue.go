@@ -5,16 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 )
 
 type customer struct {
 	wid      string
 	rid      string
 	ctx      context.Context
-	priority int
+	priority int32
 }
 
-func New(wid string, rid string, ctx context.Context, priority int) customer {
+func New(wid string, rid string, ctx context.Context, priority int32) customer {
 	return customer{
 		wid:      wid,
 		rid:      rid,
@@ -33,31 +34,16 @@ func (q *Queue) SortCustomers() {
 	sort.Sort(ByPriority(q.customers))
 }
 
-type Queue2 struct {
-	items []string
-}
-
-func (q *Queue2) Enqueue2(item string) {
-	q.items = append(q.items, item)
-}
-
-func (q *Queue2) SearchAndRemove(item string) bool {
-	for i, v := range q.items {
-		if v == item {
-
-			q.items = append(q.items[:i], q.items[i+1:]...)
-			return true
-		}
-	}
-	return false
-}
-
 type Queue struct {
 	Size      int
 	customers []customer
+	mutex     sync.Mutex
 }
 
 func (q *Queue) Enqueue(c customer) (bool, error) {
+	q.mutex.Lock() // Lock for concurrency safety
+	defer q.mutex.Unlock()
+
 	if q.Size > 0 && len(q.customers) >= q.Size {
 		return true, errors.New("Queue is full") // Queue is full
 	}
@@ -66,6 +52,9 @@ func (q *Queue) Enqueue(c customer) (bool, error) {
 }
 
 func (q *Queue) Dequeue() (string, string, context.Context, error) {
+	q.mutex.Lock() // Lock for concurrency safety
+	defer q.mutex.Unlock()
+
 	if len(q.customers) == 0 {
 		return " ", " ", nil, errors.New("Queue is empty")
 	}
@@ -75,10 +64,14 @@ func (q *Queue) Dequeue() (string, string, context.Context, error) {
 }
 
 func (q *Queue) GetLength() int {
+	q.mutex.Lock() // Lock for concurrency safety
+	defer q.mutex.Unlock()
 	return len(q.customers)
 }
 
 func (q *Queue) Display() {
+	q.mutex.Lock() // Lock for concurrency safety
+	defer q.mutex.Unlock()
 	if len(q.customers) == 0 {
 		fmt.Println("Queue is empty")
 		return
