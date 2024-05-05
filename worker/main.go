@@ -53,16 +53,18 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 	if requestid < 1 || requestid > 6 {
 		fmt.Fprintf(w, "Service not available for ID %s", id)
 	} else {
+
 		wo := client.StartWorkflowOptions{
 			TaskList:                     taskList,
 			ExecutionStartToCloseTimeout: time.Hour * 24,
 		}
 
-		_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, requestid)
+		_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 		if err != nil {
 			http.Error(w, "Error starting workflow!", http.StatusBadRequest)
 			return
+
 		}
 	}
 
@@ -95,7 +97,7 @@ func main() {
 
 	startWorkers(&cadenceClient, taskList)
 
-	fmt.Println("All workers are readyy ")
+	fmt.Println("Cadence worker ready ")
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	service := Service{&cadenceClient, appConfig.Logger}
