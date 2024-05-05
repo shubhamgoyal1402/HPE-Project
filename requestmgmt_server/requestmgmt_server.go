@@ -4,15 +4,17 @@ import (
 	"context"
 	"log"
 
-	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/Queue"
-	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
-	"google.golang.org/grpc"
-
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"net"
+	"net/http"
 	"time"
+
+	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/Queue"
+	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
+	"google.golang.org/grpc"
 
 	"os"
 	"os/exec"
@@ -52,6 +54,27 @@ var Q3 = Queue.Queue{
 	Size: 10,
 }
 
+func sendProgrammaticRequest(url string) {
+	client := &http.Client{}
+
+	// Create a new request with the custom header
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalf("Error creating new request: %s", err)
+	}
+
+	// Set the custom header to indicate a programmatic request
+	req.Header.Set("Programmatic-Request", "true")
+
+	// Send the request and handle the response
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making GET request to %s: %s", url, err)
+	}
+	defer resp.Body.Close()
+
+}
+
 func (s *RequestManagementServer) CreateRequest(ctx context.Context, in *pb.NewRequest) (*pb.Request, error) {
 
 	log.Printf("received: %v", in.GetWid())
@@ -85,11 +108,12 @@ func rpc1(ctx context.Context, workflow_id string, rid string, id int32) (string
 func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string, q *Queue.Queue) (string, error) {
 
 	for q.GetLength() >= q.Size/2 {
-		time.Sleep(time.Millisecond * 5)
+		time.Sleep(time.Second)
 	}
 
 	customer1 := Queue.New(workflow_id, rid, ctx, id)
 	ans := fmt.Sprintf("Enqueud at %s", time.Now())
+	fmt.Println(ans, workflow_id)
 	_, err := q.Enqueue(customer1)
 	if err != nil {
 		panic(err)
@@ -170,12 +194,13 @@ func PrivateCloudEnterpriseServiceProcessing() {
 	response1, runid1, _, err1 := Q1.Dequeue()
 
 	if err1 == nil {
-
+		sendProgrammaticRequest("http://localhost:8090/endpoint1")
+		// time waiting for completion of service
 		time.Sleep(time.Second * 10)
-
-		jsonSignal1, err := json.Marshal(response1)
-		if err != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err)
+		// sending signal to workflow
+		jsonSignal1, err1 := json.Marshal(response1)
+		if err1 != nil {
+			log.Fatalf("Error marshaling signal to JSON: %v", err1)
 		}
 		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response1, runid1, response1, string(jsonSignal1))
 		go executeCommand(signalcmd)
@@ -186,15 +211,16 @@ func PrivateCloudEnterpriseServiceProcessing() {
 	task_counter1--
 }
 func NetworkingServiceProcessing() {
+
 	response2, runid2, _, err2 := Q2.Dequeue()
 
 	if err2 == nil {
-
+		sendProgrammaticRequest("http://localhost:8090/endpoint2")
 		time.Sleep(time.Second * 10)
 
-		jsonSignal2, err := json.Marshal(response2)
-		if err != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err)
+		jsonSignal2, err1 := json.Marshal(response2)
+		if err1 != nil {
+			log.Fatalf("Error marshaling signal to JSON: %v", err1)
 		}
 		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response2, runid2, response2, string(jsonSignal2))
 
@@ -212,12 +238,12 @@ func BlockStorageServiceProcessing() {
 	response3, runid3, _, err3 := Q3.Dequeue()
 
 	if err3 == nil {
-
+		sendProgrammaticRequest("http://localhost:8090/endpoint3")
 		time.Sleep(time.Second * 10)
 
-		jsonSignal3, err := json.Marshal(response3)
-		if err != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err)
+		jsonSignal3, err1 := json.Marshal(response3)
+		if err1 != nil {
+			log.Fatalf("Error marshaling signal to JSON: %v", err1)
 		}
 		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response3, runid3, response3, string(jsonSignal3))
 		go executeCommand(signalcmd)
