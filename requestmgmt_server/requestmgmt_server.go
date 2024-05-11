@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"log"
 
@@ -15,9 +16,6 @@ import (
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/Queue"
 	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
 	"google.golang.org/grpc"
-
-	"os"
-	"os/exec"
 )
 
 var task_counter1 = 0
@@ -40,6 +38,30 @@ type RequestManagementServer struct {
 	pb.UnimplementedRequestManagementServer
 }
 
+type RequestBody struct {
+	WorkID string `json:"work_id"`
+	RunID  string `json:"run_id"`
+}
+
+func sendRequest(requestBody RequestBody, url string) {
+	requestBodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(requestBody.WorkID)
+	fmt.Println(requestBody.RunID)
+
+	fmt.Println("Response from server:")
+	fmt.Println(resp.Status)
+}
+
 var Q1 = Queue.Queue{
 
 	Size: 10,
@@ -52,27 +74,6 @@ var Q2 = Queue.Queue{
 var Q3 = Queue.Queue{
 
 	Size: 10,
-}
-
-func sendProgrammaticRequest(url string) {
-	client := &http.Client{}
-
-	// Create a new request with the custom header
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatalf("Error creating new request: %s", err)
-	}
-
-	// Set the custom header to indicate a programmatic request
-	req.Header.Set("Programmatic-Request", "true")
-
-	// Send the request and handle the response
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Error making GET request to %s: %s", url, err)
-	}
-	defer resp.Body.Close()
-
 }
 
 func (s *RequestManagementServer) CreateRequest(ctx context.Context, in *pb.NewRequest) (*pb.Request, error) {
@@ -194,16 +195,15 @@ func PrivateCloudEnterpriseServiceProcessing() {
 	response1, runid1, _, err1 := Q1.Dequeue()
 
 	if err1 == nil {
-		sendProgrammaticRequest("http://localhost:8090/endpoint1")
+
 		// time waiting for completion of service
 		time.Sleep(time.Second * 10)
-		// sending signal to workflow
-		jsonSignal1, err1 := json.Marshal(response1)
-		if err1 != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err1)
+
+		request1 := RequestBody{
+			WorkID: response1,
+			RunID:  runid1,
 		}
-		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response1, runid1, response1, string(jsonSignal1))
-		go executeCommand(signalcmd)
+		sendRequest(request1, "http://localhost:8090/endpoint1")
 
 		time.Sleep(time.Millisecond)
 
@@ -215,17 +215,14 @@ func NetworkingServiceProcessing() {
 	response2, runid2, _, err2 := Q2.Dequeue()
 
 	if err2 == nil {
-		sendProgrammaticRequest("http://localhost:8090/endpoint2")
+
 		time.Sleep(time.Second * 10)
 
-		jsonSignal2, err1 := json.Marshal(response2)
-		if err1 != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err1)
+		request1 := RequestBody{
+			WorkID: response2,
+			RunID:  runid2,
 		}
-		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response2, runid2, response2, string(jsonSignal2))
-
-		go executeCommand(signalcmd)
-
+		sendRequest(request1, "http://localhost:8090/endpoint2")
 		time.Sleep(time.Millisecond)
 
 	}
@@ -238,30 +235,16 @@ func BlockStorageServiceProcessing() {
 	response3, runid3, _, err3 := Q3.Dequeue()
 
 	if err3 == nil {
-		sendProgrammaticRequest("http://localhost:8090/endpoint3")
 		time.Sleep(time.Second * 10)
 
-		jsonSignal3, err1 := json.Marshal(response3)
-		if err1 != nil {
-			log.Fatalf("Error marshaling signal to JSON: %v", err1)
+		request1 := RequestBody{
+			WorkID: response3,
+			RunID:  runid3,
 		}
-		signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, response3, runid3, response3, string(jsonSignal3))
-		go executeCommand(signalcmd)
+		sendRequest(request1, "http://localhost:8090/endpoint3")
 
 		time.Sleep(time.Millisecond)
 
 	}
 	task_counter3--
-}
-
-func executeCommand(command string) {
-	cmd := exec.Command("cmd", "/c", command)
-	cmd.Stdout = os.Stdout
-
-	err := cmd.Run()
-	if err != nil {
-
-		os.Exit(1)
-	}
-
 }
