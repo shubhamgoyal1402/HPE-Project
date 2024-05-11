@@ -1,63 +1,78 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
-	"sync"
+	"os"
+	"os/exec"
 )
 
-type EndpointStats struct {
-	Count int
-	mu    sync.Mutex
+const cadenceCLIImage = "ubercadence/cli:master"
+const cadenceAddress = "host.docker.internal:7933"
+const domain = "day56-domain"
+const taskList = "Service_process"
+const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.CustomerWorkflow"
+
+type RequestBody struct {
+	WorkID string `json:"work_id"`
+	RunID  string `json:"run_id"`
 }
 
-func (es *EndpointStats) Increment() {
-	es.mu.Lock()
-	defer es.mu.Unlock()
-	es.Count++
+func handleRequest1(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, "Endpoint 1")
 }
 
-func (es *EndpointStats) GetCount() int {
-	es.mu.Lock()
-	defer es.mu.Unlock()
-	return es.Count
+func handleRequest2(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, "Endpoint 2")
 }
 
-func handler(endpointName string, stats *EndpointStats) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Increment the hit count for the endpoint
-		if headerValue := r.Header.Get("Programmatic-Request"); strings.ToLower(headerValue) == "true" {
-			// Increment the hit count for the endpoint
-			stats.Increment()
-		}
+func handleRequest3(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, "Endpoint 3")
+}
 
-		// Display the request details
-		requestDetails := fmt.Sprintf("Request Method: %s\nRequest URL: %s\nRequest Headers: %v\n", r.Method, r.URL.String(), r.Header)
-
-		// Return the hit count and request details
-		response := fmt.Sprintf("Endpoint: %s\nHit Count: %d\n\n%s", endpointName, stats.GetCount(), requestDetails)
-
-		// Write the response to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(response))
+func handleRequest(w http.ResponseWriter, r *http.Request, endpoint string) {
+	// Decode JSON request body into RequestBody struct
+	var requestBody RequestBody
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+
+	// Accessing the values from the request body
+	fmt.Printf("Received request at %s: WorkflowID=%s, RunID=%s\n", endpoint, requestBody.WorkID, requestBody.RunID)
+
+	jsonSignal1, err1 := json.Marshal(requestBody.WorkID)
+	if err1 != nil {
+		log.Fatalf("Error marshaling signal to JSON: %v", err1)
+	}
+	signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, requestBody.WorkID, requestBody.RunID, requestBody.WorkID, string(jsonSignal1))
+	go executeCommand(signalcmd)
+
+	// Send a response
+	fmt.Fprintf(w, "Received request at %s: WorkflowID=%s, RunID=%s\n", endpoint, requestBody.WorkID, requestBody.RunID)
 }
 
 func main() {
-	// Create stats objects for each endpoint
-	endpoint1Stats := &EndpointStats{}
-	endpoint2Stats := &EndpointStats{}
-	endpoint3Stats := &EndpointStats{}
 
-	// Create an HTTP server with handlers for each endpoint
-	http.HandleFunc("/endpoint1", handler("Endpoint1", endpoint1Stats))
-	http.HandleFunc("/endpoint2", handler("Endpoint2", endpoint2Stats))
-	http.HandleFunc("/endpoint3", handler("Endpoint3", endpoint3Stats))
+	http.HandleFunc("/endpoint1", handleRequest1)
+	http.HandleFunc("/endpoint2", handleRequest2)
+	http.HandleFunc("/endpoint3", handleRequest3)
 
-	// Start the HTTP server on port 8090
-	port := ":8090"
-	fmt.Printf("Starting server on port %s\n", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	fmt.Println("Server listening on port 8090...")
+	log.Fatal(http.ListenAndServe(":8090", nil))
+}
+
+func executeCommand(command string) {
+	cmd := exec.Command("cmd", "/c", command)
+	cmd.Stdout = os.Stdout
+
+	err := cmd.Run()
+	if err != nil {
+
+		os.Exit(1)
+	}
+
 }
