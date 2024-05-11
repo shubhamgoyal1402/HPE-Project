@@ -59,7 +59,7 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 			ExecutionStartToCloseTimeout: time.Hour * 24,
 		}
 
-		_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+		_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, requestid)
 
 		if err != nil {
 			http.Error(w, "Error starting workflow!", http.StatusBadRequest)
