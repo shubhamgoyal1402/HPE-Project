@@ -66,6 +66,7 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 			return
 
 		}
+
 	}
 
 	fmt.Fprintf(w, "Service Name = %s\n", Name)
@@ -84,15 +85,21 @@ func startWorkers(h *cadenceAdapter.CadenceAdapter, taskList string) {
 	if err != nil {
 		h.Logger.Error("Failed to start workers.", zap.Error(err))
 		panic("Failed to start workers")
+
 	}
+
 }
+
+var appConfig config.AppConfig
+var cadenceClient cadenceAdapter.CadenceAdapter
+var service = Service{&cadenceClient, appConfig.Logger}
 
 func main() {
 
 	fmt.Println("Starting Worker..")
-	var appConfig config.AppConfig
+
 	appConfig.Setup()
-	var cadenceClient cadenceAdapter.CadenceAdapter
+
 	cadenceClient.Setup(&appConfig.Cadence)
 
 	startWorkers(&cadenceClient, taskList)
@@ -100,7 +107,7 @@ func main() {
 	fmt.Println("Cadence worker ready ")
 
 	fileServer := http.FileServer(http.Dir("./static"))
-	service := Service{&cadenceClient, appConfig.Logger}
+
 	http.Handle("/", fileServer)
 
 	http.HandleFunc("/form", service.formHandler)
