@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"log"
 	"net/http"
 	"os"
@@ -21,38 +22,55 @@ type RequestBody struct {
 }
 
 func handleRequest1(w http.ResponseWriter, r *http.Request) {
-	handleRequest(w, r, "Endpoint 1")
+	wid, runid := handleRequest(w, r, "Endpoint 1")
+	fmt.Println(wid)
+	x := "PRIVATE CLOUD ENTERPRISE"
+
+	fmt.Fprintf(w, "Service Name = %s\n", x)
+	fmt.Fprintf(w, "Workflow ID= %s\n", wid)
+	fmt.Fprintf(w, "Run ID = %s\n", runid)
+
 }
 
 func handleRequest2(w http.ResponseWriter, r *http.Request) {
-	handleRequest(w, r, "Endpoint 2")
+	wid, runid := handleRequest(w, r, "Endpoint 2")
+	x := "NETWORKING SERVICE"
+
+	fmt.Fprintf(w, "Service Name = %s\n", x)
+	fmt.Fprintf(w, "Workflow ID= %s\n", wid)
+	fmt.Fprintf(w, "Run ID = %s\n", runid)
 }
 
 func handleRequest3(w http.ResponseWriter, r *http.Request) {
-	handleRequest(w, r, "Endpoint 3")
+	wid, runid := handleRequest(w, r, "Endpoint 3")
+	x := "BLOCK STORAGE SERVCIE"
+
+	fmt.Fprintf(w, "Service Name = %s\n", x)
+	fmt.Fprintf(w, "Workflow ID= %s\n", wid)
+	fmt.Fprintf(w, "Run ID = %s\n", runid)
 }
 
-func handleRequest(w http.ResponseWriter, r *http.Request, endpoint string) {
-	// Decode JSON request body into RequestBody struct
+func handleRequest(w http.ResponseWriter, r *http.Request, endpoint string) (string, string) {
+
 	var requestBody RequestBody
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return "", ""
 	}
 
-	// Accessing the values from the request body
 	fmt.Printf("Received request at %s: WorkflowID=%s, RunID=%s\n", endpoint, requestBody.WorkID, requestBody.RunID)
 
 	jsonSignal1, err1 := json.Marshal(requestBody.WorkID)
 	if err1 != nil {
 		log.Fatalf("Error marshaling signal to JSON: %v", err1)
 	}
+
 	signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, requestBody.WorkID, requestBody.RunID, requestBody.WorkID, string(jsonSignal1))
 	go executeCommand(signalcmd)
 
-	// Send a response
-	fmt.Fprintf(w, "Received request at %s: WorkflowID=%s, RunID=%s\n", endpoint, requestBody.WorkID, requestBody.RunID)
+	return requestBody.WorkID, requestBody.RunID
+
 }
 
 func main() {
