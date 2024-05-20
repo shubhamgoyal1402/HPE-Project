@@ -25,11 +25,6 @@ var c = 0
 var a = 0
 var b = 0
 
-const cadenceCLIImage = "ubercadence/cli:master"
-const cadenceAddress = "host.docker.internal:7933"
-const domain = "day56-domain"
-const taskList = "Service_process"
-const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.CustomerWorkflow"
 const (
 	port = ":50051"
 )
