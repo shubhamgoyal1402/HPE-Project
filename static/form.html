@@ -47,7 +47,8 @@
         }
 
         input[type="text"],
-        input[type="submit"] {
+        input[type="submit"],
+        select {
             padding: 10px;
             border: 1px solid #ccc;
             /* Light Gray */
@@ -101,9 +102,17 @@
         <h1>GREENLAKE SERVICES</h1>
 
         <form method="POST" action="/form">
-            <label for="name">Service Name:</label> <input name="name" type="text" id="name" value="" /> <label
-                for="service_id">Service ID:</label>
-            <input name="service_id" type="text" id="service_id" value="" />
+
+
+            <label for="service">Select Service:</label>
+            <select name="service" id="service">
+                <option value="networking_prime">Networking Service - Prime</option>
+                <option value="networking_non_prime">Networking Service - Non Prime</option>
+                <option value="cloud_prime">Private Cloud Enterprise Service - Prime</option>
+                <option value="cloud_non_prime">Private Cloud Enterprise Service - Non Prime</option>
+                <option value="storage_prime">Block Storage Service - Prime</option>
+                <option value="storage_non_prime">Block Storage Service - Non Prime</option>
+            </select>
 
             <input type="submit" value="Submit" />
         </form>
@@ -114,44 +123,39 @@
                 <th>Greenlake Services</th>
                 <th>Membership Status</th>
                 <th>Service ID</th>
-
             </tr>
             <tr>
                 <td>Networking Service</td>
                 <td>Prime</td>
                 <td>1</td>
-
             </tr>
             <tr>
                 <td>Networking Service</td>
                 <td>Non Prime</td>
                 <td>4</td>
-
             </tr>
             <tr>
                 <td>Private Cloud Enterprise Service</td>
                 <td>Prime</td>
                 <td>2</td>
-
             </tr>
             <tr>
                 <td>Private Cloud Enterprise Service</td>
                 <td>Non Prime</td>
                 <td>5</td>
-
             </tr>
             <tr>
                 <td>Block Storage Service</td>
                 <td>Prime</td>
                 <td>3</td>
-
             </tr>
             <tr>
                 <td>Block Storage Service</td>
                 <td>Non Prime</td>
                 <td>6</td>
-
             </tr>
         </table>
     </div>
 </body>
+
+</html>
