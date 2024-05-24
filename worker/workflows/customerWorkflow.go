@@ -1,10 +1,12 @@
 package workflows
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
@@ -23,6 +25,11 @@ func init() {
 
 	workflow.Register(CustomerWorkflow)
 	activity.Register(Activity1)
+	activity.Register(Application_Details)
+	activity.Register(Quiesce)
+	activity.Register(snapshot)
+	activity.Register(UnQuiesce)
+	activity.Register(backup)
 
 }
 
@@ -46,30 +53,180 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 	logger.Info("Customer workflow started")
 	var Result string
 
-	err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
-	if err != nil {
-		logger.Error("Activity failed.", zap.Error(err))
-		return err
+	if id == 1 || id == 4 {
+
+		err1 := workflow.ExecuteActivity(ctx, Application_Details, wid).Get(ctx, &Result)
+		if err1 != nil {
+			logger.Error("Application Failed", zap.Error(err1))
+			return err1
+		}
+
+		err2 := workflow.ExecuteActivity(ctx, Quiesce, wid).Get(ctx, &Result)
+		if err2 != nil {
+			logger.Error("Quiece Failed", zap.Error(err2))
+			return err2
+		}
+
+		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
+		if err != nil {
+			logger.Error("Activity failed.", zap.Error(err))
+			return err
+		}
+
+		var signalName = wid
+		var signalVal string
+		signalChan := workflow.GetSignalChannel(ctx, signalName)
+
+		s := workflow.NewSelector(ctx)
+		s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
+			c.Receive(ctx, &signalVal)
+			workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
+		})
+		s.Select(ctx)
+
+		if len(signalVal) > 0 && signalVal != wid {
+			return errors.New(wid)
+		}
+
+		err3 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
+		if err3 != nil {
+			logger.Error("Subscription Failed", zap.Error(err3))
+			return err3
+		}
+
 	}
 
-	var signalName = wid
-	var signalVal string
-	signalChan := workflow.GetSignalChannel(ctx, signalName)
+	if id == 2 || id == 5 {
 
-	s := workflow.NewSelector(ctx)
-	s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
-		c.Receive(ctx, &signalVal)
-		workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
-	})
-	s.Select(ctx)
+		err1 := workflow.ExecuteActivity(ctx, Application_Details, wid).Get(ctx, &Result)
+		if err1 != nil {
+			logger.Error("Application Failed", zap.Error(err1))
+			return err1
+		}
 
-	if len(signalVal) > 0 && signalVal != wid {
-		return errors.New(wid)
+		err2 := workflow.ExecuteActivity(ctx, snapshot, wid).Get(ctx, &Result)
+		if err2 != nil {
+			logger.Error("Quiece Failed", zap.Error(err2))
+			return err2
+		}
+
+		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
+		if err != nil {
+			logger.Error("Activity failed.", zap.Error(err))
+			return err
+		}
+
+		var signalName = wid
+		var signalVal string
+		signalChan := workflow.GetSignalChannel(ctx, signalName)
+
+		s := workflow.NewSelector(ctx)
+		s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
+			c.Receive(ctx, &signalVal)
+			workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
+		})
+		s.Select(ctx)
+
+		if len(signalVal) > 0 && signalVal != wid {
+			return errors.New(wid)
+		}
+
+		err3 := workflow.ExecuteActivity(ctx, backup, wid).Get(ctx, &Result)
+		if err3 != nil {
+			logger.Error("Subscription Failed", zap.Error(err3))
+			return err3
+		}
+
 	}
 
 	logger.Info("Workflow completed.", zap.String("Result", Result))
 
 	return nil
+}
+
+func Application_Details(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/details"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
+}
+
+func Quiesce(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/Quiesce"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
+}
+
+func snapshot(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/snapshot"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
+}
+
+func UnQuiesce(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/UnQuiesce"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
+}
+
+func backup(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/backup"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
 }
 
 func Activity1(ctx context.Context, workflow_id string, rid string, id int32) (string, error) {
