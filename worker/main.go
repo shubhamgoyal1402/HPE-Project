@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"strconv"
 	"time"
 
 	"github.com/shubhamgoyal1402/hpe-golang-workflow/project/adapters/cadenceAdapter"
@@ -23,7 +22,7 @@ const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
 const domain = "day56-domain"
 const taskList = "Service_process"
-const workflowType = "github.com/shubhamgoyal1402/hpe-golang-workflow/project/worker/workflows.CustomerWorkflow"
+const taskList2 = "Service2_process"
 
 const (
 	address = "localhost:50051"
@@ -42,35 +41,85 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Request For %s Service Submitted\n", r.FormValue("name"))
+	service_request := r.FormValue("service")
+	fmt.Fprintf(w, "Request For %s Service Submitted\n", service_request)
 
-	Name := r.FormValue("name")
-	id := r.FormValue("service_id")
-	requestid, err := strconv.Atoi(id)
-	if err != nil {
-		panic(err)
-	}
-	if requestid < 1 || requestid > 6 {
-		fmt.Fprintf(w, "Service not available for ID %s", id)
-	} else {
+	switch service_request {
 
-		wo := client.StartWorkflowOptions{
-			TaskList:                     taskList,
-			ExecutionStartToCloseTimeout: time.Hour * 24,
-		}
+	case "networking_prime":
 
-		_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, requestid)
-
-		if err != nil {
-			http.Error(w, "Error starting workflow!", http.StatusBadRequest)
+		ans := h.start_worklfow(1)
+		if ans == false {
 			return
+		}
 
+	case "networking_non_prime":
+		ans := h.start_worklfow(4)
+		if ans == false {
+			return
+		}
+	case "cloud_prime":
+		ans := h.start_worklfow(2)
+		if ans == false {
+			return
+		}
+	case "cloud_non_prime":
+		ans := h.start_worklfow(5)
+		if ans == false {
+			return
+		}
+
+	case "storage_prime":
+		ans := h.start_worklfow2(3)
+		if ans == false {
+			return
+		}
+
+	case "storage_non_prime":
+		ans := h.start_worklfow2(6)
+		if ans == false {
+			return
 		}
 
 	}
 
-	fmt.Fprintf(w, "Service Name = %s\n", Name)
-	fmt.Fprintf(w, "Request ID= %s\n", id)
+}
+
+func (h *Service) start_worklfow(id int) bool {
+
+	wo := client.StartWorkflowOptions{
+		TaskList:                     taskList,
+		ExecutionStartToCloseTimeout: time.Hour * 24,
+	}
+
+	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+
+	if err != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+	}
+
+	return true
+
+}
+func (h *Service) start_worklfow2(id int) bool {
+
+	wo := client.StartWorkflowOptions{
+		TaskList:                     taskList2,
+		ExecutionStartToCloseTimeout: time.Hour * 24,
+	}
+
+	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
+
+	if err != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+	}
+
+	return true
+
 }
 
 func startWorkers(h *cadenceAdapter.CadenceAdapter, taskList string) {
@@ -103,6 +152,7 @@ func main() {
 	cadenceClient.Setup(&appConfig.Cadence)
 
 	startWorkers(&cadenceClient, taskList)
+	startWorkers(&cadenceClient, taskList2)
 
 	fmt.Println("Cadence worker ready ")
 
