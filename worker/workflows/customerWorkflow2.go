@@ -3,6 +3,7 @@ package workflows
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -19,6 +20,10 @@ import (
 	"go.uber.org/cadence/workflow"
 	"go.uber.org/zap"
 )
+
+type RequestBody struct {
+	WorkID string `json:"work_id"`
+}
 
 func init() {
 	// Registering workflow and activtiy
@@ -94,15 +99,21 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 
 func validateUser(ctx context.Context, workflow_id string) error {
 
-	time.Sleep(time.Second * 5)
-	endpoint := "http://localhost:9090/validate"
-	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
-	if err != nil {
-		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
-		return err
-
+	request1 := RequestBody{
+		WorkID: workflow_id,
 	}
 
+	time.Sleep(time.Second * 5)
+
+	requestBodyBytes, err := json.Marshal(request1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := http.Post("http://localhost:9090/validate", "application/json", bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	return nil
