@@ -50,30 +50,30 @@ func sendRequest(requestBody RequestBody, url string) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(requestBody.WorkID)
-	fmt.Println(requestBody.RunID)
+	//	fmt.Println(requestBody.WorkID)
+	//	fmt.Println(requestBody.RunID)
 
-	fmt.Println("Response from server:")
-	fmt.Println(resp.Status)
+	//fmt.Println("Response from server:")
+	//fmt.Println(resp.Status)
 }
 
 var Q1 = Queue.Queue{
 
-	Size: 10,
+	Size: 30,
 }
 
 var Q2 = Queue.Queue{
 
-	Size: 10,
+	Size: 30,
 }
 var Q3 = Queue.Queue{
 
-	Size: 10,
+	Size: 30,
 }
 
 func (s *RequestManagementServer) CreateRequest(ctx context.Context, in *pb.NewRequest) (*pb.Request, error) {
 
-	log.Printf("received: %v", in.GetWid())
+	//log.Printf("received: %v", in.GetWid())
 	_, err := rpc1(ctx, in.GetWid(), in.GetRid(), in.GetId())
 
 	if err != nil {
@@ -87,14 +87,17 @@ func rpc1(ctx context.Context, workflow_id string, rid string, id int32) (string
 	case 1, 4:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q1)
 		Q1.SortCustomers()
+
 		return ans, err
 	case 2, 5:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q2)
 		Q2.SortCustomers()
+
 		return ans, err
 	case 3, 6:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q3)
 		Q3.SortCustomers()
+
 		return ans, err
 	default:
 		return "Error Service not available ", errors.ErrUnsupported
@@ -109,7 +112,7 @@ func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string
 
 	customer1 := Queue.New(workflow_id, rid, ctx, id)
 	ans := fmt.Sprintf("Enqueud at %s", time.Now())
-	fmt.Println(ans, workflow_id)
+	//	fmt.Println(ans, workflow_id)
 	_, err := q.Enqueue(customer1)
 	if err != nil {
 		panic(err)
@@ -144,7 +147,7 @@ func main() {
 func worker1() {
 
 	for c > -1 {
-		if task_counter1 < 5 {
+		if task_counter1 < 15 {
 			task_counter1++
 			go PrivateCloudEnterpriseServiceProcessing()
 			time.Sleep(time.Millisecond * 100)
@@ -157,7 +160,7 @@ func worker1() {
 func worker2() {
 
 	for a > -1 {
-		if task_counter2 < 5 {
+		if task_counter2 < 15 {
 
 			task_counter2++
 			go NetworkingServiceProcessing()
@@ -173,7 +176,7 @@ func worker2() {
 func worker3() {
 
 	for b > -1 {
-		if task_counter3 < 5 {
+		if task_counter3 < 15 {
 			task_counter3++
 			go BlockStorageServiceProcessing()
 			time.Sleep(time.Millisecond * 100)
@@ -187,10 +190,10 @@ func worker3() {
 
 func PrivateCloudEnterpriseServiceProcessing() {
 
-	response1, runid1, _, err1 := Q1.Dequeue()
+	response1, runid1, _, priority, err1 := Q1.Dequeue()
 
 	if err1 == nil {
-
+		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
 		// time waiting for completion of service
 		time.Sleep(time.Second * 10)
 
@@ -207,10 +210,10 @@ func PrivateCloudEnterpriseServiceProcessing() {
 }
 func NetworkingServiceProcessing() {
 
-	response2, runid2, _, err2 := Q2.Dequeue()
+	response2, runid2, _, priority, err2 := Q2.Dequeue()
 
 	if err2 == nil {
-
+		fmt.Printf("WID: %s  Priority: %v\n", response2, priority)
 		time.Sleep(time.Second * 10)
 
 		request1 := RequestBody{
@@ -227,9 +230,10 @@ func NetworkingServiceProcessing() {
 
 func BlockStorageServiceProcessing() {
 
-	response3, runid3, _, err3 := Q3.Dequeue()
+	response3, runid3, _, priority, err3 := Q3.Dequeue()
 
 	if err3 == nil {
+		fmt.Printf("WID: %s  Priority: %v\n", response3, priority)
 		time.Sleep(time.Second * 10)
 
 		request1 := RequestBody{
