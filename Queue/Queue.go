@@ -51,16 +51,16 @@ func (q *Queue) Enqueue(c customer) (bool, error) {
 	return false, nil
 }
 
-func (q *Queue) Dequeue() (string, string, context.Context, error) {
+func (q *Queue) Dequeue() (string, string, context.Context, int32, error) {
 	q.mutex.Lock() // Lock for concurrency safety
 	defer q.mutex.Unlock()
 
 	if len(q.customers) == 0 {
-		return " ", " ", nil, errors.New("Queue is empty")
+		return " ", " ", nil, 0, errors.New("Queue is empty")
 	}
 	c := q.customers[0]
 	q.customers = q.customers[1:]
-	return c.wid, c.rid, c.ctx, nil
+	return c.wid, c.rid, c.ctx, c.priority, nil
 }
 
 func (q *Queue) GetLength() int {
