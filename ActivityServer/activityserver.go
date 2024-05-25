@@ -6,7 +6,8 @@ import (
 )
 
 func applicationDetails(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Application Details Submitted")
+
+	fmt.Fprintln(w, "Application Detail Activity")
 
 }
 
