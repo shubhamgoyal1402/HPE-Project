@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -71,19 +70,10 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 		return err
 	}
 
-	var signalName = wid
-	var signalVal string
-	signalChan := workflow.GetSignalChannel(ctx, signalName)
-
-	s := workflow.NewSelector(ctx)
-	s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
-		c.Receive(ctx, &signalVal)
-		workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
-	})
-	s.Select(ctx)
-
-	if len(signalVal) > 0 && signalVal != wid {
-		return errors.New(wid)
+	err1 := workflow.ExecuteActivity(ctx, wait, wid).Get(ctx, &Result)
+	if err1 != nil {
+		logger.Error("Activity wait failed.", zap.Error(err1))
+		return err1
 	}
 
 	err4 := workflow.ExecuteActivity(ctx, blockStorage, wid).Get(ctx, &Result)
@@ -153,6 +143,7 @@ func subscriptionDetails(ctx context.Context, workflow_id string) error {
 	return nil
 
 }
+
 func Activity3(ctx context.Context, workflow_id string, rid string, id int32) (string, error) {
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
