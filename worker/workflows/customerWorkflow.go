@@ -3,11 +3,14 @@ package workflows
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
+
 	"log"
 	"net/http"
+
 	"time"
+
+	"github.com/gorilla/websocket"
 
 	pb "github.com/shubhamgoyal1402/hpe-golang-workflow/project/requestmgmt"
 
@@ -30,6 +33,7 @@ func init() {
 	activity.Register(snapshot)
 	activity.Register(UnQuiesce)
 	activity.Register(backup)
+	activity.Register(wait)
 
 }
 
@@ -69,31 +73,23 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
 		if err != nil {
-			logger.Error("Activity failed.", zap.Error(err))
+			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
 		}
 
-		var signalName = wid
-		var signalVal string
-		signalChan := workflow.GetSignalChannel(ctx, signalName)
-
-		s := workflow.NewSelector(ctx)
-		s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
-			c.Receive(ctx, &signalVal)
-			workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
-		})
-		s.Select(ctx)
-
-		if len(signalVal) > 0 && signalVal != wid {
-			return errors.New(wid)
+		err4 := workflow.ExecuteActivity(ctx, wait, wid).Get(ctx, &Result)
+		if err4 != nil {
+			logger.Error("Activity wait failed.", zap.Error(err4))
+			return err4
 		}
-
 		err3 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
 		if err3 != nil {
 			logger.Error("Subscription Failed", zap.Error(err3))
 			return err3
 		}
+		logger.Info("Workflow completed.", zap.String("Result", Result))
 
+		return nil
 	}
 
 	if id == 2 || id == 5 {
@@ -112,23 +108,14 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
 		if err != nil {
-			logger.Error("Activity failed.", zap.Error(err))
+			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
 		}
 
-		var signalName = wid
-		var signalVal string
-		signalChan := workflow.GetSignalChannel(ctx, signalName)
-
-		s := workflow.NewSelector(ctx)
-		s.AddReceive(signalChan, func(c workflow.Channel, more bool) {
-			c.Receive(ctx, &signalVal)
-			workflow.GetLogger(ctx).Info("Received signal!", zap.String("signal", signalName), zap.String("value", signalVal))
-		})
-		s.Select(ctx)
-
-		if len(signalVal) > 0 && signalVal != wid {
-			return errors.New(wid)
+		err4 := workflow.ExecuteActivity(ctx, wait, wid).Get(ctx, &Result)
+		if err4 != nil {
+			logger.Error("Activity wait failed.", zap.Error(err4))
+			return err4
 		}
 
 		err3 := workflow.ExecuteActivity(ctx, backup, wid).Get(ctx, &Result)
@@ -136,6 +123,9 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 			logger.Error("Subscription Failed", zap.Error(err3))
 			return err3
 		}
+		logger.Info("Workflow completed.", zap.String("Result", Result))
+
+		return nil
 
 	}
 
@@ -229,6 +219,13 @@ func backup(ctx context.Context, workflow_id string) error {
 
 }
 
+func wait(ctx context.Context, workflow_id string) error {
+	var expectedSignal = workflow_id
+	waitingFunction(expectedSignal)
+
+	return nil
+}
+
 func Activity1(ctx context.Context, workflow_id string, rid string, id int32) (string, error) {
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
@@ -255,4 +252,26 @@ func Activity1(ctx context.Context, workflow_id string, rid string, id int32) (s
 	ans := fmt.Sprintf("Request created with Wid: %v", resp.GetWid())
 
 	return ans, nil
+}
+
+func waitingFunction(expectedSignal string) {
+	fmt.Println("Waiting for the signal...")
+
+	c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8090/ws", nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	defer c.Close()
+
+	for {
+		_, message, err := c.ReadMessage()
+		if err != nil {
+			log.Println("read:", err)
+			return
+		}
+		if string(message) == expectedSignal {
+			fmt.Println("Signal received, continuing execution...")
+			return
+		}
+	}
 }
