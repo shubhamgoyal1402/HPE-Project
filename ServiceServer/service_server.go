@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
+
+	"github.com/gorilla/websocket"
 )
 
 const cadenceCLIImage = "ubercadence/cli:master"
@@ -17,6 +18,98 @@ const domain = "day56-domain"
 type RequestBody struct {
 	WorkID string `json:"work_id"`
 	RunID  string `json:"run_id"`
+}
+
+var (
+	signal    string
+	mu        sync.Mutex
+	clients   = make(map[*websocket.Conn]struct{})
+	clientsMu sync.Mutex
+	upgrader  = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+)
+
+func setSignalHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.ParseForm()
+	newSignal := r.FormValue("signal")
+	if newSignal == "" {
+		http.Error(w, "Signal not provided", http.StatusBadRequest)
+		return
+	}
+
+	mu.Lock()
+	signal = newSignal
+	mu.Unlock()
+
+	notifyClients(newSignal)
+
+	fmt.Fprintln(w, "Signal set to", newSignal)
+}
+
+func getSignalHandler(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	currentSignal := signal
+	mu.Unlock()
+
+	fmt.Fprintln(w, currentSignal)
+}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Failed to upgrade to WebSocket", http.StatusInternalServerError)
+		return
+	}
+
+	clientsMu.Lock()
+	clients[conn] = struct{}{}
+	clientsMu.Unlock()
+
+	defer func() {
+		clientsMu.Lock()
+		delete(clients, conn)
+		clientsMu.Unlock()
+		conn.Close()
+	}()
+
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+	}
+}
+
+func notifyClients(signal string) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+	for client := range clients {
+		err := client.WriteMessage(websocket.TextMessage, []byte(signal))
+		if err != nil {
+			client.Close()
+			delete(clients, client)
+		}
+	}
+}
+
+func triggerSignal(wid string) {
+
+	fmt.Println("Triggering the signal...")
+	resp, err := http.PostForm("http://localhost:8090/set-signal",
+		map[string][]string{"signal": {wid}})
+	if err != nil {
+		fmt.Println("Error triggering signal:", err)
+		return
+	}
+	defer resp.Body.Close()
+	fmt.Println("Signal triggered successfully.")
 }
 
 func handleRequest1(w http.ResponseWriter, r *http.Request) {
@@ -59,13 +152,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, endpoint string) (str
 
 	fmt.Printf("Received request at %s: WorkflowID=%s, RunID=%s\n", endpoint, requestBody.WorkID, requestBody.RunID)
 
-	jsonSignal1, err1 := json.Marshal(requestBody.WorkID)
-	if err1 != nil {
-		log.Fatalf("Error marshaling signal to JSON: %v", err1)
-	}
-
-	signalcmd := fmt.Sprintf("docker run --rm %s --address %s -do %s workflow signal -w %s -r %s -n %s -i %s", cadenceCLIImage, cadenceAddress, domain, requestBody.WorkID, requestBody.RunID, requestBody.WorkID, string(jsonSignal1))
-	go executeCommand(signalcmd)
+	go triggerSignal(requestBody.WorkID)
 
 	return requestBody.WorkID, requestBody.RunID
 
@@ -77,18 +164,11 @@ func main() {
 	http.HandleFunc("/endpoint2", handleRequest2)
 	http.HandleFunc("/endpoint3", handleRequest3)
 
+	http.HandleFunc("/set-signal", setSignalHandler)
+	http.HandleFunc("/get-signal", getSignalHandler)
+	http.HandleFunc("/ws", wsHandler)
+
 	fmt.Println("Server listening on port 8090...")
 	log.Fatal(http.ListenAndServe(":8090", nil))
-}
-
-func executeCommand(command string) {
-	cmd := exec.Command("cmd", "/c", command)
-	cmd.Stdout = os.Stdout
-
-	err := cmd.Run()
-	if err != nil {
-
-		os.Exit(1)
-	}
 
 }
