@@ -60,6 +60,7 @@ func (q *Queue) Dequeue() (string, string, context.Context, int32, error) {
 	}
 	c := q.customers[0]
 	q.customers = q.customers[1:]
+
 	return c.wid, c.rid, c.ctx, c.priority, nil
 }
 
