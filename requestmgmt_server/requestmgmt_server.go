@@ -112,7 +112,8 @@ func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string
 
 	customer1 := Queue.New(workflow_id, rid, ctx, id)
 	ans := fmt.Sprintf("Enqueud at %s", time.Now())
-	//	fmt.Println(ans, workflow_id)
+
+	//fmt.Printf("WID: %s  Priority: %v\n", workflow_id, id)
 	_, err := q.Enqueue(customer1)
 	if err != nil {
 		panic(err)
