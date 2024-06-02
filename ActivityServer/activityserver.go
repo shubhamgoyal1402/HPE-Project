@@ -3,22 +3,32 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/brianvoe/gofakeit/v6"
 )
 
 func applicationDetails(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Application Detail Activity")
+	gofakeit.Seed(0)
+
+	// Generate a fake name and phone number
+	name := gofakeit.Name()
+	phone := gofakeit.Phone()
+
+	fmt.Fprintf(w, "NAME: %s\n", name)
+	fmt.Fprintf(w, "PHONE: %s", phone)
 
 }
 
 func validateUser(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "User Verified")
+	fmt.Fprintln(w, "User has been Verified")
 
 }
+
 func getSubscription(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Getting Subscription Details")
+	fmt.Fprintln(w, "Getting Subscription Details: PRIME || NON-PRIME")
 
 }
 func Quiesce(w http.ResponseWriter, r *http.Request) {
