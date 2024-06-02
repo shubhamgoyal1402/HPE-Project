@@ -92,12 +92,15 @@ func (h *Service) start_worklfow(id int) bool {
 		ExecutionStartToCloseTimeout: time.Hour * 24,
 	}
 
-	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+	workflownum, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+
+	fmt.Printf("WORKFLOW ID: %s PRIORITY: %v\n", workflownum.ID, id)
 
 	if err != nil {
 
 		h.logger.Error("Service not available ")
 		return false
+
 	}
 
 	return true
@@ -110,12 +113,15 @@ func (h *Service) start_worklfow2(id int) bool {
 		ExecutionStartToCloseTimeout: time.Hour * 24,
 	}
 
-	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
+	workflownum, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
+
+	fmt.Printf("WORKFLOW ID: %s PRIORITY: %v\n", workflownum.ID, id)
 
 	if err != nil {
 
 		h.logger.Error("Service not available ")
 		return false
+
 	}
 
 	return true
