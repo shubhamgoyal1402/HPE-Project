@@ -16,9 +16,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             margin: 0 auto;
-            /* Center the container horizontally */
             max-width: 800px;
-            /* Set a maximum width for responsiveness */
         }
 
         .logo {
@@ -34,7 +32,6 @@
         h1 {
             text-align: center;
             color: #2e8b57;
-            /* Green */
             font-size: 2em;
             margin-bottom: 20px;
         }
@@ -43,7 +40,6 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            /* Make labels bolder for better readability */
         }
 
         input[type="text"],
@@ -51,40 +47,33 @@
         select {
             padding: 10px;
             border: 1px solid #ccc;
-            /* Light Gray */
             border-radius: 3px;
+            margin-bottom: 10px;
         }
 
         input[type="submit"] {
             background-color: #2e8b57;
-            /* Green */
             color: #fff;
-            /* White */
             cursor: pointer;
             padding: 15px 20px;
-            /* Increase button size for better click target */
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            /* Add space between heading and table */
         }
 
         th,
         td {
             text-align: left;
             padding: 15px;
-            /* Increase cell padding for better spacing */
             border: 1px solid #ddd;
-            /* Light Gray */
         }
 
         th {
             background-color: #f5f5f5;
             color: #333;
-            /* Black */
         }
 
         tr:nth-child(even) {
@@ -96,66 +85,57 @@
 <body>
     <div class="container">
         <div class="logo">
-            <img src="https://www.supportwarehouse.com/wp-content/uploads/2020/09/HPE-Unveils-Its-New-Converged-IoT-1.jpg"
+            <img src="https://download.logo.wine/logo/Hewlett_Packard_Enterprise/Hewlett_Packard_Enterprise-Logo.wine.png"
                 alt="Company Logo" width="400" height="200" />
         </div>
         <h1>GREENLAKE SERVICES</h1>
 
-        <form method="POST" action="/form">
-
-
+        <form id="serviceForm" method="POST" action="/form">
             <label for="service">Select Service:</label>
             <select name="service" id="service">
-                <option value="networking_prime">Networking Service - Prime</option>
-                <option value="networking_non_prime">Networking Service - Non Prime</option>
-                <option value="cloud_prime">Private Cloud Enterprise Service - Prime</option>
-                <option value="cloud_non_prime">Private Cloud Enterprise Service - Non Prime</option>
-                <option value="storage_prime">Block Storage Service - Prime</option>
-                <option value="storage_non_prime">Block Storage Service - Non Prime</option>
+                <option value="networking">Networking Service</option>
+                <option value="cloud">Private Cloud Enterprise Service</option>
+                <option value="storage">Block Storage Service</option>
             </select>
 
+            <label for="membership">Select Membership Status:</label>
+            <select name="membership" id="membership">
+                <option value="prime">Prime</option>
+                <option value="non_prime">Non Prime</option>
+            </select>
+
+            <input type="hidden" name="serviceId" id="serviceId" />
             <input type="submit" value="Submit" />
         </form>
 
-        <h2>Available Services</h2>
-        <table>
-            <tr>
-                <th>Greenlake Services</th>
-                <th>Membership Status</th>
-                <th>Service ID</th>
-            </tr>
-            <tr>
-                <td>Networking Service</td>
-                <td>Prime</td>
-                <td>1</td>
-            </tr>
-            <tr>
-                <td>Networking Service</td>
-                <td>Non Prime</td>
-                <td>4</td>
-            </tr>
-            <tr>
-                <td>Private Cloud Enterprise Service</td>
-                <td>Prime</td>
-                <td>2</td>
-            </tr>
-            <tr>
-                <td>Private Cloud Enterprise Service</td>
-                <td>Non Prime</td>
-                <td>5</td>
-            </tr>
-            <tr>
-                <td>Block Storage Service</td>
-                <td>Prime</td>
-                <td>3</td>
-            </tr>
-            <tr>
-                <td>Block Storage Service</td>
-                <td>Non Prime</td>
-                <td>6</td>
-            </tr>
-        </table>
-    </div>
+
+
+        <script>
+            document.getElementById('serviceForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var service = document.getElementById('service').value;
+                var membership = document.getElementById('membership').value;
+
+                var serviceId;
+                if (service === 'networking' && membership === 'prime') {
+                    serviceId = 1;
+                } else if (service === 'networking' && membership === 'non_prime') {
+                    serviceId = 4;
+                } else if (service === 'cloud' && membership === 'prime') {
+                    serviceId = 2;
+                } else if (service === 'cloud' && membership === 'non_prime') {
+                    serviceId = 5;
+                } else if (service === 'storage' && membership === 'prime') {
+                    serviceId = 3;
+                } else if (service === 'storage' && membership === 'non_prime') {
+                    serviceId = 6;
+                }
+
+                document.getElementById('serviceId').value = serviceId;
+                this.submit();
+            });
+        </script>
 </body>
 
 </html>
