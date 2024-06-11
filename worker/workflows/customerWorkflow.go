@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"go.uber.org/cadence"
 	"go.uber.org/cadence/activity"
 
 	"go.uber.org/cadence/workflow"
@@ -42,10 +43,20 @@ const (
 )
 
 func CustomerWorkflow(ctx workflow.Context, id int) error {
+
+	retryPolicy := &cadence.RetryPolicy{
+		InitialInterval:    time.Second,
+		BackoffCoefficient: 2,
+		MaximumInterval:    time.Minute * 5,
+		ExpirationInterval: time.Minute * 10,
+		MaximumAttempts:    5,
+	}
+
 	ao := workflow.ActivityOptions{
-		ScheduleToStartTimeout: time.Minute * 60,
-		StartToCloseTimeout:    time.Minute * 60,
-		HeartbeatTimeout:       time.Minute * 60,
+		ScheduleToStartTimeout: time.Minute * 5,
+		StartToCloseTimeout:    time.Minute * 5,
+		HeartbeatTimeout:       time.Minute * 5,
+		RetryPolicy:            retryPolicy,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
@@ -220,6 +231,7 @@ func backup(ctx context.Context, workflow_id string) error {
 }
 
 func wait(ctx context.Context, workflow_id string) error {
+
 	var expectedSignal = workflow_id
 	waitingFunction(expectedSignal)
 
@@ -264,6 +276,7 @@ func waitingFunction(expectedSignal string) {
 	defer c.Close()
 
 	for {
+
 		_, message, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
