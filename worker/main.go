@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"context"
 	"log"
@@ -41,41 +42,43 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service_request := r.FormValue("service")
+	service_request := r.FormValue("serviceId")
 	fmt.Fprintf(w, "Request For %s Service Submitted\n", service_request)
 
-	switch service_request {
+	num, _ := strconv.Atoi(service_request)
+	switch num {
 
-	case "networking_prime":
+	case 1:
 
 		ans := h.start_worklfow(1)
+
 		if ans == false {
 			return
 		}
 
-	case "networking_non_prime":
+	case 4:
 		ans := h.start_worklfow(4)
 		if ans == false {
 			return
 		}
-	case "cloud_prime":
+	case 2:
 		ans := h.start_worklfow(2)
 		if ans == false {
 			return
 		}
-	case "cloud_non_prime":
+	case 5:
 		ans := h.start_worklfow(5)
 		if ans == false {
 			return
 		}
 
-	case "storage_prime":
+	case 3:
 		ans := h.start_worklfow2(3)
 		if ans == false {
 			return
 		}
 
-	case "storage_non_prime":
+	case 6:
 		ans := h.start_worklfow2(6)
 		if ans == false {
 			return
@@ -89,14 +92,52 @@ func (h *Service) start_worklfow(id int) bool {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList,
-		ExecutionStartToCloseTimeout: time.Hour * 24,
+		ExecutionStartToCloseTimeout: time.Minute * 3,
 	}
 
-	workflownum, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
-
-	fmt.Printf("WORKFLOW ID: %s PRIORITY: %v\n", workflownum.ID, id)
+	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+
+	}
+	_, err2 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err2 != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+
+	}
+	_, err3 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+
+	if err3 != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+
+	}
+	_, err4 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err4 != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+
+	}
+	_, err5 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+
+	if err5 != nil {
+
+		h.logger.Error("Service not available ")
+		return false
+
+	}
+	_, err6 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err6 != nil {
 
 		h.logger.Error("Service not available ")
 		return false
@@ -106,21 +147,37 @@ func (h *Service) start_worklfow(id int) bool {
 	return true
 
 }
+
 func (h *Service) start_worklfow2(id int) bool {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList2,
-		ExecutionStartToCloseTimeout: time.Hour * 24,
+		ExecutionStartToCloseTimeout: time.Minute * 5,
 	}
 
-	workflownum, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
+	for i := 0; i < 20; i++ {
 
-	fmt.Printf("WORKFLOW ID: %s PRIORITY: %v\n", workflownum.ID, id)
+		if i%2 == 0 {
 
-	if err != nil {
+			_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 3)
 
-		h.logger.Error("Service not available ")
-		return false
+			if err != nil {
+
+				h.logger.Error("Service not available ")
+				return false
+
+			}
+		} else {
+			_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 6)
+
+			if err != nil {
+
+				h.logger.Error("Service not available ")
+				return false
+
+			}
+
+		}
 
 	}
 
