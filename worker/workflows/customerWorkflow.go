@@ -52,6 +52,15 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 		MaximumAttempts:    5,
 	}
 
+	currentState := "started Worklfow"
+	err := workflow.SetQueryHandler(ctx, "current_state", func() (string, error) {
+		return currentState, nil
+	})
+	if err != nil {
+		currentState = "failed to register query handler"
+		return err
+	}
+
 	ao := workflow.ActivityOptions{
 		ScheduleToStartTimeout: time.Minute * 5,
 		StartToCloseTimeout:    time.Minute * 5,
@@ -60,6 +69,7 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
+	currentState = "waiting to be started"
 	// To get the Workflow ID and run ID
 	wid := workflow.GetInfo(ctx).WorkflowExecution.ID
 	rid := workflow.GetInfo(ctx).WorkflowExecution.RunID
@@ -71,69 +81,82 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 	if id == 1 || id == 4 {
 
 		err1 := workflow.ExecuteActivity(ctx, Application_Details, wid).Get(ctx, &Result)
+		currentState = "Application Details"
 		if err1 != nil {
 			logger.Error("Application Failed", zap.Error(err1))
+			currentState = "Application Details Error"
 			return err1
 		}
 
 		err2 := workflow.ExecuteActivity(ctx, Quiesce, wid).Get(ctx, &Result)
+		currentState = "Quiesce Details"
 		if err2 != nil {
 			logger.Error("Quiece Failed", zap.Error(err2))
 			return err2
 		}
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
+
+		currentState = "Request enqueued "
 		if err != nil {
 			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
 		}
 
 		err4 := workflow.ExecuteActivity(ctx, wait, wid).Get(ctx, &Result)
+		currentState = "waiting for signal"
 		if err4 != nil {
 			logger.Error("Activity wait failed.", zap.Error(err4))
 			return err4
 		}
 		err3 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
+		currentState = "unquiece activity "
 		if err3 != nil {
-			logger.Error("Subscription Failed", zap.Error(err3))
+			logger.Error("Unquiece Failed", zap.Error(err3))
 			return err3
 		}
 		logger.Info("Workflow completed.", zap.String("Result", Result))
-
+		currentState = "Completed "
 		return nil
 	}
 
 	if id == 2 || id == 5 {
 
 		err1 := workflow.ExecuteActivity(ctx, Application_Details, wid).Get(ctx, &Result)
+		currentState = "Application Details"
 		if err1 != nil {
 			logger.Error("Application Failed", zap.Error(err1))
 			return err1
 		}
 
 		err2 := workflow.ExecuteActivity(ctx, snapshot, wid).Get(ctx, &Result)
+		currentState = "Taking a Snapshot"
 		if err2 != nil {
 			logger.Error("Quiece Failed", zap.Error(err2))
 			return err2
 		}
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
+		currentState = "Enqueuing the snapshot Activity"
 		if err != nil {
 			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
 		}
 
 		err4 := workflow.ExecuteActivity(ctx, wait, wid).Get(ctx, &Result)
+		currentState = "Waiting for signal"
 		if err4 != nil {
 			logger.Error("Activity wait failed.", zap.Error(err4))
 			return err4
 		}
 
 		err3 := workflow.ExecuteActivity(ctx, backup, wid).Get(ctx, &Result)
+		currentState = "Creating backup"
 		if err3 != nil {
 			logger.Error("Subscription Failed", zap.Error(err3))
 			return err3
 		}
+		currentState = "Workflow completetd "
 		logger.Info("Workflow completed.", zap.String("Result", Result))
 
 		return nil
