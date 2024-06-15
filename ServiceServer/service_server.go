@@ -19,14 +19,6 @@ type RequestBody struct {
 	WorkID     string `json:"work_id"`
 	PriorityID int    `json:"p_id"`
 }
-type progress struct {
-	wid string
-	pid int
-}
-
-var progress1 []progress
-var progress2 []progress
-var progress3 []progress
 
 var (
 	signal    string
@@ -107,37 +99,6 @@ func notifyClients(signal string) {
 	}
 }
 
-func add(newWid string, newPid int, parray []progress) {
-	prog := progress{
-		wid: newWid,
-		pid: newPid,
-	}
-	parray = append(parray, prog)
-}
-
-func progress1_fn(w http.ResponseWriter, r *http.Request) {
-
-	for _, prog := range progress1 {
-		fmt.Fprintf(w, "WORKFLOW ID: %s PRIORITY: %d\n", prog.wid, prog.pid)
-	}
-
-}
-func progress2_fn(w http.ResponseWriter, r *http.Request) {
-
-	for _, prog := range progress2 {
-		fmt.Fprintf(w, "WORKFLOW ID: %s PRIORITY: %d\n", prog.wid, prog.pid)
-	}
-
-}
-
-func progress3_fn(w http.ResponseWriter, r *http.Request) {
-
-	for _, prog := range progress3 {
-		fmt.Fprintf(w, "WORKFLOW ID: %s PRIORITY: %d\n", prog.wid, prog.pid)
-	}
-
-}
-
 func triggerSignal(wid string) {
 
 	fmt.Println("Triggering the signal...")
@@ -154,7 +115,7 @@ func triggerSignal(wid string) {
 func handleRequest1(w http.ResponseWriter, r *http.Request) {
 
 	wid, runid := handleRequest(w, r, "Endpoint 1")
-	add(wid, runid, progress1)
+
 	fmt.Println(wid)
 	x := "PRIVATE CLOUD ENTERPRISE"
 
@@ -166,7 +127,7 @@ func handleRequest1(w http.ResponseWriter, r *http.Request) {
 
 func handleRequest2(w http.ResponseWriter, r *http.Request) {
 	wid, runid := handleRequest(w, r, "Endpoint 2")
-	add(wid, runid, progress2)
+
 	x := "NETWORKING SERVICE"
 
 	fmt.Fprintf(w, "Service Name = %s\n", x)
@@ -176,7 +137,7 @@ func handleRequest2(w http.ResponseWriter, r *http.Request) {
 
 func handleRequest3(w http.ResponseWriter, r *http.Request) {
 	wid, runid := handleRequest(w, r, "Endpoint 3")
-	add(wid, runid, progress3)
+
 	x := "BLOCK STORAGE SERVCIE"
 
 	fmt.Fprintf(w, "Service Name = %s\n", x)
@@ -195,18 +156,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request, endpoint string) (str
 
 	fmt.Printf("Received request at %s: WorkflowID=%s, Priority ID=%d\n", endpoint, requestBody.WorkID, requestBody.PriorityID)
 
-	switch requestBody.PriorityID {
-
-	case 1, 4:
-		add(requestBody.WorkID, requestBody.PriorityID, progress1)
-
-	case 2, 5:
-		add(requestBody.WorkID, requestBody.PriorityID, progress2)
-
-	case 3, 6:
-		add(requestBody.WorkID, requestBody.PriorityID, progress3)
-	}
-
 	go triggerSignal(requestBody.WorkID)
 
 	return requestBody.WorkID, requestBody.PriorityID
@@ -218,9 +167,7 @@ func main() {
 	http.HandleFunc("/endpoint1", handleRequest1)
 	http.HandleFunc("/endpoint2", handleRequest2)
 	http.HandleFunc("/endpoint3", handleRequest3)
-	http.HandleFunc("/progress1", progress1_fn)
-	http.HandleFunc("/progress2", progress2_fn)
-	http.HandleFunc("/progress3", progress3_fn)
+
 	http.HandleFunc("/set-signal", setSignalHandler)
 	http.HandleFunc("/get-signal", getSignalHandler)
 	http.HandleFunc("/ws", wsHandler)
