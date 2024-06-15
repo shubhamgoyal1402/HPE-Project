@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
-	"text/template"
 )
 
 const cadenceCLIImage = "ubercadence/cli:master"
@@ -14,27 +13,16 @@ const domain = "day56-domain"
 const state = "current_state"
 
 func main() {
-
-	http.HandleFunc("/progress", formHandler)
+	// Serve the index.html file from the current directory
+	fs := http.FileServer(http.Dir("."))
+	http.Handle("/", fs)
 	http.HandleFunc("/submit", submitHandler)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	fmt.Printf("Starting server at 9095 port\n")
-
-	err2 := http.ListenAndServe(":9095", nil)
-
-	if err2 != nil {
-		log.Fatal(err2)
-	}
-}
-
-func formHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("static/progress.html")
+	fmt.Println("Starting server at port 9095")
+	err := http.ListenAndServe(":9095", nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		log.Fatal(err)
 	}
-	tmpl.Execute(w, nil)
 }
 
 func submitHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,8 +37,48 @@ func submitHandler(w http.ResponseWriter, r *http.Request) {
 	dockerCmd := fmt.Sprintf("docker run --rm %s --address %s --domain %s workflow query -w %s -r %s -qt %s", cadenceCLIImage, cadenceAddress, domain, workflowID, runID, state)
 	ans := executeCommand(dockerCmd)
 
-	fmt.Fprintf(w, "Current Status %s\n", ans)
+	htmlResponse := `
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Workflow Status</title>
+			<style>
+				body {
+					font-family: Arial, sans-serif;
+					background-color: #f0f0f0;
+					padding: 20px;
+				}
+				.container {
+					max-width: 600px;
+					margin: 0 auto;
+					background-color: #fff;
+					padding: 20px;
+					border-radius: 8px;
+					box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+				}
+				h2 {
+					color: #333;
+					margin-bottom: 20px;
+				}
+				p {
+					color: #666;
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<h2>Workflow Status</h2>
+				<p><strong>Current Status:</strong> %s</p>
+			</div>
+		</body>
+		</html>
+	`
+
+	fmt.Fprintf(w, htmlResponse, ans)
 }
+
 func executeCommand(command string) string {
 	cmd := exec.Command("cmd", "/c", command)
 
@@ -64,5 +92,4 @@ func executeCommand(command string) string {
 	}
 
 	return string(output)
-
 }
