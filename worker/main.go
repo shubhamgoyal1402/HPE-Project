@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"strconv"
 
 	"context"
@@ -43,44 +44,196 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	service_request := r.FormValue("serviceId")
-	fmt.Fprintf(w, "Request For %s Service Submitted\n", service_request)
 
 	num, _ := strconv.Atoi(service_request)
+
+	htmlTemplate := `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #f0f8f9; /* Light green similar to HPE */
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 500px;
+            padding: 20px;
+            max-width: 100%;
+            overflow: hidden; /* Prevent container overflow */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed; /* Fix table layout */
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            word-wrap: break-word; /* Wrap long words */
+        }
+        th {
+            background-color: #7ac142; /* Green color similar to HPE */
+            color: white;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        .highlight {
+            font-weight: bold;
+            color: #2c3e50; /* Dark text color */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center; color: #7ac142; margin-bottom: 20px;">Workflow Information</h2>
+        <table>
+            <tr>
+                <th style="min-width: 150px;">Parameter</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td style="word-break: break-all;">Workflow ID:</td>
+                <td><span class="highlight">{{.WorkflowID}}</span></td>
+            </tr>
+            <tr>
+                <td style="word-break: break-all;">Run ID:</td>
+                <td><span class="highlight">{{.RunID}}</span></td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
+	`
 	switch num {
 
 	case 1:
 
-		ans := h.start_worklfow(1)
+		wid, rid := h.start_worklfow(1)
 
-		if ans == false {
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		//fmt.Fprintf(w, "Worklfow ID: %s\nRun ID: %s", wid, rid)
 
 	case 4:
-		ans := h.start_worklfow(4)
-		if ans == false {
+		wid, rid := h.start_worklfow(4)
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 	case 2:
-		ans := h.start_worklfow(2)
-		if ans == false {
+		wid, rid := h.start_worklfow(2)
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 	case 5:
-		ans := h.start_worklfow(5)
-		if ans == false {
+		wid, rid := h.start_worklfow(5)
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 	case 3:
-		ans := h.start_worklfow2(3)
-		if ans == false {
+		wid, rid := h.start_worklfow2(3)
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 	case 6:
-		ans := h.start_worklfow2(6)
-		if ans == false {
+		wid, rid := h.start_worklfow2(6)
+		data := struct {
+			WorkflowID string
+			RunID      string
+		}{
+			WorkflowID: wid,
+			RunID:      rid,
+		}
+
+		tmpl := template.Must(template.New("index").Parse(htmlTemplate))
+
+		// Execute the template with data and write to ResponseWriter
+		err := tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -88,14 +241,23 @@ func (h *Service) formHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Service) start_worklfow(id int) bool {
+func (h *Service) start_worklfow(id int) (string, string) {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList,
 		ExecutionStartToCloseTimeout: time.Minute * 3,
 	}
 
-	_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+	req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+
+	if err != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+
+	/*_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err != nil {
 
@@ -142,46 +304,28 @@ func (h *Service) start_worklfow(id int) bool {
 		h.logger.Error("Service not available ")
 		return false
 
-	}
+	} */
 
-	return true
+	return req.ID, req.RunID
 
 }
 
-func (h *Service) start_worklfow2(id int) bool {
+func (h *Service) start_worklfow2(id int) (string, string) {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList2,
 		ExecutionStartToCloseTimeout: time.Minute * 5,
 	}
 
-	for i := 0; i < 20; i++ {
+	ans, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
 
-		if i%2 == 0 {
+	if err != nil {
 
-			_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 3)
-
-			if err != nil {
-
-				h.logger.Error("Service not available ")
-				return false
-
-			}
-		} else {
-			_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 6)
-
-			if err != nil {
-
-				h.logger.Error("Service not available ")
-				return false
-
-			}
-
-		}
+		return "", ""
 
 	}
 
-	return true
+	return ans.ID, ans.RunID
 
 }
 
