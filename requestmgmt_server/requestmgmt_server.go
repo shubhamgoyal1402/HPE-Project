@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"sync"
 
 	"encoding/json"
 	"errors"
@@ -37,6 +38,9 @@ type RequestBody struct {
 	WorkID     string `json:"work_id"`
 	PriorityID int    `json:"p_id"`
 }
+
+var dequeuedTasks []RequestBody
+var mu sync.Mutex
 
 func sendRequest(requestBody RequestBody, url string) {
 	requestBodyBytes, err := json.Marshal(requestBody)
@@ -137,11 +141,82 @@ func main() {
 	pb.RegisterRequestManagementServer(s, &RequestManagementServer{})
 	log.Printf("server listening at %v", lis.Addr())
 
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve at: %v", err)
-	}
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
+	http.HandleFunc("/dequeuedTasks", dequeuedTasksHandler)
+	http.ListenAndServe(":9092", nil)
+
+	fmt.Println("vdfvkjf")
 	select {}
+}
+func dequeuedTasksHandler(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprintln(w, `
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Dequeued Tasks</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 100vh;
+				background-color: #f0f0f0;
+			}
+			table {
+				border-collapse: collapse;
+				width: 80%;
+				margin: 20px auto;
+				background-color: #fff;
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			}
+th, td {
+				padding: 12px;
+				text-align: left;
+				border-bottom: 1px solid #ddd;
+			}
+			th {
+				background-color: #4CAF50;
+				color: white;
+			}
+			tr:nth-child(even) {
+				background-color: #f2f2f2;
+			}
+			tr:hover {
+				background-color: #ddd;
+			}
+		</style>
+	</head>
+	<body>
+		<table>
+			<tr>
+				<th>Work ID</th>
+				<th>Priority</th>
+			</tr>`)
+	for _, task := range dequeuedTasks {
+		fmt.Fprintf(w, `
+					<tr>
+						<td>%s</td>
+						<td>%d</td>
+					</tr>`, task.WorkID, task.PriorityID)
+	}
+	fmt.Fprintln(w, `
+				</table>
+			</body>
+			</html>`)
 }
 
 func worker1() {
@@ -194,15 +269,19 @@ func PrivateCloudEnterpriseServiceProcessing() {
 	response1, _, _, priority, _, err1 := Q2.Dequeue()
 
 	if err1 == nil {
+		request1 := RequestBody{
+			WorkID:     response1,
+			PriorityID: int(priority),
+		}
+
+		mu.Lock()
+		dequeuedTasks = append(dequeuedTasks, request1)
+		mu.Unlock()
 
 		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
 		// time waiting for completion of service
 		time.Sleep(time.Second * 10)
 
-		request1 := RequestBody{
-			WorkID:     response1,
-			PriorityID: int(priority),
-		}
 		sendRequest(request1, "http://localhost:8090/endpoint2")
 
 		time.Sleep(time.Millisecond)
@@ -216,14 +295,17 @@ func NetworkingServiceProcessing() {
 	response2, _, _, priority, _, err2 := Q1.Dequeue()
 
 	if err2 == nil {
-
-		fmt.Printf("WID: %s  Priority: %v\n", response2, priority)
-		time.Sleep(time.Second * 10)
-
 		request1 := RequestBody{
 			WorkID:     response2,
 			PriorityID: int(priority),
 		}
+		mu.Lock()
+		dequeuedTasks = append(dequeuedTasks, request1)
+		mu.Unlock()
+
+		fmt.Printf("WID: %s  Priority: %v\n", response2, priority)
+		time.Sleep(time.Second * 10)
+
 		sendRequest(request1, "http://localhost:8090/endpoint1")
 		time.Sleep(time.Millisecond)
 
@@ -238,13 +320,17 @@ func BlockStorageServiceProcessing() {
 
 	if err3 == nil {
 
-		fmt.Printf("WID: %s  Priority: %v\n", response3, priority)
-		time.Sleep(time.Second * 10)
-
 		request1 := RequestBody{
 			WorkID:     response3,
 			PriorityID: int(priority),
 		}
+		mu.Lock()
+		dequeuedTasks = append(dequeuedTasks, request1)
+		mu.Unlock()
+
+		fmt.Printf("WID: %s  Priority: %v\n", response3, priority)
+		time.Sleep(time.Second * 10)
+
 		sendRequest(request1, "http://localhost:8090/endpoint3")
 
 		time.Sleep(time.Millisecond)
