@@ -36,9 +36,9 @@ func Quiesce(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func storageSnapshot(w http.ResponseWriter, r *http.Request) {
+func setup(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Creating storage snapshot")
+	fmt.Fprintln(w, "Enviornment Setup started ")
 
 }
 
@@ -47,9 +47,9 @@ func unQuiesce(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "UnQuiesce Process started")
 }
 
-func backup(w http.ResponseWriter, r *http.Request) {
+func instanceDeploy(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintln(w, "Catalogue Backup")
+	fmt.Fprintln(w, "Instance Deployed ")
 
 }
 
@@ -64,9 +64,9 @@ func main() {
 
 	http.HandleFunc("/details", applicationDetails)
 	http.HandleFunc("/Quiesce", Quiesce)
-	http.HandleFunc("/snapshot", storageSnapshot)
+	http.HandleFunc("/Enviornment-setup", setup)
 	http.HandleFunc("/UnQuiesce", unQuiesce)
-	http.HandleFunc("/backup", backup)
+	http.HandleFunc("/deploy", instanceDeploy)
 
 	// Workflow 2
 
