@@ -31,9 +31,9 @@ func init() {
 	activity.Register(Activity1)
 	activity.Register(Application_Details)
 	activity.Register(Quiesce)
-	activity.Register(snapshot)
+	activity.Register(setup)
 	activity.Register(UnQuiesce)
-	activity.Register(backup)
+	activity.Register(deploy)
 	activity.Register(wait)
 
 }
@@ -130,7 +130,7 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 			return err1
 		}
 
-		err2 := workflow.ExecuteActivity(ctx, snapshot, wid).Get(ctx, &Result)
+		err2 := workflow.ExecuteActivity(ctx, setup, wid).Get(ctx, &Result)
 		currentState = "Setting up the Enviornment"
 		if err2 != nil {
 			logger.Error("Quiece Failed", zap.Error(err2))
@@ -151,7 +151,7 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 			return err4
 		}
 
-		err3 := workflow.ExecuteActivity(ctx, backup, wid).Get(ctx, &Result)
+		err3 := workflow.ExecuteActivity(ctx, deploy, wid).Get(ctx, &Result)
 		currentState = "Deploying the Instance"
 		if err3 != nil {
 			logger.Error("Subscription Failed", zap.Error(err3))
@@ -203,7 +203,7 @@ func Quiesce(ctx context.Context, workflow_id string) error {
 
 }
 
-func snapshot(ctx context.Context, workflow_id string) error {
+func setup(ctx context.Context, workflow_id string) error {
 
 	time.Sleep(time.Second * 5)
 	endpoint := "http://localhost:9090/Enviornment-setup"
@@ -237,7 +237,7 @@ func UnQuiesce(ctx context.Context, workflow_id string) error {
 
 }
 
-func backup(ctx context.Context, workflow_id string) error {
+func deploy(ctx context.Context, workflow_id string) error {
 
 	time.Sleep(time.Second * 5)
 	endpoint := "http://localhost:9090/deploy"
