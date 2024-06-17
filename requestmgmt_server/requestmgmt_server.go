@@ -41,6 +41,7 @@ type RequestBody struct {
 }
 
 var dequeuedTasks []RequestBody
+var enqueuedTasks []RequestBody
 var mu sync.Mutex
 
 func sendRequest(requestBody RequestBody, url string) {
@@ -106,7 +107,53 @@ func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string
 	if err != nil {
 		panic(err)
 	}
+
+	request1 := RequestBody{
+		WorkID:     workflow_id,
+		PriorityID: int(id),
+	}
+	mu.Lock()
+	enqueuedTasks = append(enqueuedTasks, request1)
+	mu.Unlock()
+
 	return ans, err
+}
+
+func enqueuedTasksHandler(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	var networkingTasks, cloudEnterpriseTasks, blockStorageTasks []RequestBody
+	for _, task := range enqueuedTasks {
+		switch task.PriorityID {
+		case 1, 4:
+			networkingTasks = append(networkingTasks, task)
+		case 2, 5:
+			cloudEnterpriseTasks = append(cloudEnterpriseTasks, task)
+		case 3, 6:
+			blockStorageTasks = append(blockStorageTasks, task)
+		}
+	}
+
+	data := struct {
+		NetworkingTasks      []RequestBody
+		CloudEnterpriseTasks []RequestBody
+		BlockStorageTasks    []RequestBody
+	}{
+		NetworkingTasks:      networkingTasks,
+		CloudEnterpriseTasks: cloudEnterpriseTasks,
+		BlockStorageTasks:    blockStorageTasks,
+	}
+
+	tmpl := template.Must(template.New("enqueued_tasks.html").Funcs(template.FuncMap{
+		"isPrimePriority": isPrimePriority,
+	}).ParseFiles("enqueued_tasks.html"))
+
+	err := tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
@@ -135,6 +182,7 @@ func main() {
 	}()
 
 	http.HandleFunc("/dequeuedTasks", dequeuedTasksHandler)
+	http.HandleFunc("/enqueuedTasks", enqueuedTasksHandler)
 	http.ListenAndServe(":9092", nil)
 	select {}
 }
@@ -233,6 +281,12 @@ func PrivateCloudEnterpriseServiceProcessing() {
 		}
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
+		for i, task := range enqueuedTasks {
+			if task.WorkID == response1 {
+				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
+				break
+			}
+		}
 		mu.Unlock()
 
 		time.Sleep(time.Second * 10)
@@ -256,6 +310,12 @@ func NetworkingServiceProcessing() {
 
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
+		for i, task := range enqueuedTasks {
+			if task.WorkID == response2 {
+				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
+				break
+			}
+		}
 		mu.Unlock()
 		time.Sleep(time.Second * 10)
 
@@ -280,6 +340,12 @@ func BlockStorageServiceProcessing() {
 
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
+		for i, task := range enqueuedTasks {
+			if task.WorkID == response3 {
+				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
+				break
+			}
+		}
 		mu.Unlock()
 
 		time.Sleep(time.Millisecond)
