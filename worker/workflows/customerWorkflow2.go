@@ -74,7 +74,7 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 	var Result string
 
 	err2 := workflow.ExecuteActivity(ctx, validateUser, wid).Get(ctx, &Result)
-	currentState = "Validate User"
+	currentState = "Validating User"
 	if err2 != nil {
 		logger.Error("Validate User Failed", zap.Error(err2))
 		return err2
@@ -87,7 +87,7 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 	}
 
 	err := workflow.ExecuteActivity(ctx, Activity3, wid, rid, id).Get(ctx, &Result)
-	currentState = "Enqueuing Activtiy"
+	currentState = "Request enqueued for volume provision"
 	if err != nil {
 		logger.Error("Activity failed.", zap.Error(err))
 		return err
@@ -106,7 +106,7 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 		logger.Error("Activity failed.", zap.Error(err4))
 		return err4
 	}
-	currentState = "Workflow completed"
+	currentState = "Block Storage Granted"
 	logger.Info("Workflow completed.", zap.String("Result", Result))
 
 	return nil
