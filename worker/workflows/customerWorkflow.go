@@ -89,7 +89,7 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 		}
 
 		err2 := workflow.ExecuteActivity(ctx, Quiesce, wid).Get(ctx, &Result)
-		currentState = "Quiesce Details"
+		currentState = "Quiesce Process started"
 		if err2 != nil {
 			logger.Error("Quiece Failed", zap.Error(err2))
 			return err2
@@ -97,7 +97,7 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
 
-		currentState = "Request enqueued "
+		currentState = "Enqueung the Quiece Request "
 		if err != nil {
 			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
@@ -110,13 +110,14 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 			return err4
 		}
 		err3 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
-		currentState = "unquiece activity "
+		currentState = "Unquiesce Process Started"
 		if err3 != nil {
 			logger.Error("Unquiece Failed", zap.Error(err3))
 			return err3
 		}
+		currentState = "Data protection completed"
 		logger.Info("Workflow completed.", zap.String("Result", Result))
-		currentState = "Completed "
+
 		return nil
 	}
 
@@ -130,14 +131,14 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 		}
 
 		err2 := workflow.ExecuteActivity(ctx, snapshot, wid).Get(ctx, &Result)
-		currentState = "Taking a Snapshot"
+		currentState = "Setting up the Enviornment"
 		if err2 != nil {
 			logger.Error("Quiece Failed", zap.Error(err2))
 			return err2
 		}
 
 		err := workflow.ExecuteActivity(ctx, Activity1, wid, rid, id).Get(ctx, &Result)
-		currentState = "Enqueuing the snapshot Activity"
+		currentState = "Enqueuing the reuest for instance"
 		if err != nil {
 			logger.Error("Activity Enqueue failed.", zap.Error(err))
 			return err
@@ -151,12 +152,12 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 		}
 
 		err3 := workflow.ExecuteActivity(ctx, backup, wid).Get(ctx, &Result)
-		currentState = "Creating backup"
+		currentState = "Deploying the Instance"
 		if err3 != nil {
 			logger.Error("Subscription Failed", zap.Error(err3))
 			return err3
 		}
-		currentState = "Workflow completetd "
+		currentState = "Cloud Deployment Completed "
 		logger.Info("Workflow completed.", zap.String("Result", Result))
 
 		return nil
@@ -205,7 +206,7 @@ func Quiesce(ctx context.Context, workflow_id string) error {
 func snapshot(ctx context.Context, workflow_id string) error {
 
 	time.Sleep(time.Second * 5)
-	endpoint := "http://localhost:9090/snapshot"
+	endpoint := "http://localhost:9090/Enviornment-setup"
 	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
 	if err != nil {
 		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
@@ -239,7 +240,7 @@ func UnQuiesce(ctx context.Context, workflow_id string) error {
 func backup(ctx context.Context, workflow_id string) error {
 
 	time.Sleep(time.Second * 5)
-	endpoint := "http://localhost:9090/backup"
+	endpoint := "http://localhost:9090/deploy"
 	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
 	if err != nil {
 		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
