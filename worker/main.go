@@ -22,7 +22,7 @@ import (
 
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
-const domain = "day56-domain"
+const domain = "final3-domain"
 const taskList = "Service_process"
 const taskList2 = "Service2_process"
 
@@ -177,10 +177,19 @@ func (h *Service) start_worklfow(id int) (string, string) {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList,
-		ExecutionStartToCloseTimeout: time.Minute * 3,
+		ExecutionStartToCloseTimeout: time.Minute * 30,
 	}
 
-	req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+	/*req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
+
+	if err != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	} */
+
+	req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err != nil {
 
@@ -188,37 +197,30 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		return "", ""
 
 	}
-
-	/*_, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
-
-	if err != nil {
-
-		h.logger.Error("Service not available ")
-		return false
-
-	}
-	_, err2 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+	_, err2 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err2 != nil {
 
 		h.logger.Error("Service not available ")
-		return false
-
+		return "", ""
 	}
 	_, err3 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err3 != nil {
 
 		h.logger.Error("Service not available ")
-		return false
+		return "", ""
 
 	}
+
+	time.Sleep(2 * time.Second)
+
 	_, err4 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
 	if err4 != nil {
 
 		h.logger.Error("Service not available ")
-		return false
+		return "", ""
 
 	}
 	_, err5 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
@@ -226,17 +228,74 @@ func (h *Service) start_worklfow(id int) (string, string) {
 	if err5 != nil {
 
 		h.logger.Error("Service not available ")
-		return false
+		return "", ""
 
 	}
-	_, err6 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+	_, err6 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err6 != nil {
 
 		h.logger.Error("Service not available ")
-		return false
+		return "", ""
 
-	} */
+	}
+
+	_, err7 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err7 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err8 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+
+	if err8 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err9 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err9 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err10 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err10 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err11 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err11 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err12 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err12 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err13 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+
+	if err13 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
 
 	return req.ID, req.RunID
 
@@ -246,17 +305,32 @@ func (h *Service) start_worklfow2(id int) (string, string) {
 
 	wo := client.StartWorkflowOptions{
 		TaskList:                     taskList2,
-		ExecutionStartToCloseTimeout: time.Minute * 5,
+		ExecutionStartToCloseTimeout: time.Minute * 50,
 	}
 
-	ans, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, id)
+	ans, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
 	if err != nil {
 
 		return "", ""
 
 	}
+	_, err13 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
+	if err13 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err14 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+
+	if err14 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
 	return ans.ID, ans.RunID
 
 }
