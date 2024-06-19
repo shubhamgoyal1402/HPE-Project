@@ -13,7 +13,7 @@ import (
 
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
-const domain = "day56-domain"
+const domain = "final3-domain"
 
 type RequestBody struct {
 	WorkID     string `json:"work_id"`
@@ -117,7 +117,7 @@ func handleRequest1(w http.ResponseWriter, r *http.Request) {
 	wid, runid := handleRequest(w, r, "Endpoint 1")
 
 	fmt.Println(wid)
-	x := "PRIVATE CLOUD ENTERPRISE"
+	x := "DATA PROTECTION SERVICE "
 
 	fmt.Fprintf(w, "Service Name = %s\n", x)
 	fmt.Fprintf(w, "Workflow ID= %s\n", wid)
@@ -128,7 +128,7 @@ func handleRequest1(w http.ResponseWriter, r *http.Request) {
 func handleRequest2(w http.ResponseWriter, r *http.Request) {
 	wid, runid := handleRequest(w, r, "Endpoint 2")
 
-	x := "NETWORKING SERVICE"
+	x := "CLOUD DEPLOYMENT SERVICE"
 
 	fmt.Fprintf(w, "Service Name = %s\n", x)
 	fmt.Fprintf(w, "Workflow ID= %s\n", wid)
