@@ -59,6 +59,10 @@ func blockStorage(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func snapshot(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(w, "Snapshot Activtiy")
+}
+
 func main() {
 	// Workflow 1
 
@@ -67,6 +71,7 @@ func main() {
 	http.HandleFunc("/Enviornment-setup", setup)
 	http.HandleFunc("/UnQuiesce", unQuiesce)
 	http.HandleFunc("/deploy", instanceDeploy)
+	http.HandleFunc("/snapshot", snapshot)
 
 	// Workflow 2
 
