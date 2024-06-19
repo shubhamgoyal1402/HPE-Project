@@ -60,7 +60,7 @@ func blockStorage(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapshot(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(w, "Snapshot Activtiy")
+	fmt.Fprintln(w, "Snapshot Activtiy")
 }
 
 func main() {
