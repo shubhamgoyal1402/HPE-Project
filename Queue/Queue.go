@@ -74,7 +74,7 @@ func (q *Queue) Enqueue(c customer) (bool, error) {
 	}
 
 	fmt.Printf("wid:%s pid: %d pos:%d time:%s\n", c.wid, c.priority, c.leno, c.timestamp)
-
+	fmt.Print("Queue Sorted:")
 	for i := 0; i < len(q.customers); i++ {
 		fmt.Print(q.customers[i].priority, " ")
 
@@ -114,10 +114,11 @@ func (q *Queue) Display() {
 		fmt.Println("Queue is empty")
 		return
 	}
-	fmt.Println("Customers in the Queue:")
+	//	fmt.Println("Customers in the Queue:")
 	for _, c := range q.customers {
-		fmt.Printf("WID: %s, Priority: %d, Timestamp: %v\n", c.wid, c.priority, c.timestamp)
+		fmt.Println(c.priority)
 	}
+	fmt.Println()
 }
 
 func (q *Queue) IsEmpty() bool {
@@ -161,6 +162,12 @@ func (q *Queue) MoveToFrontIfOverdue(id int32) {
 
 					// Insert the overdue customer at the found position
 					q.customers = append(q.customers[:insertIndex], append([]customer{overdueCustomer}, q.customers[insertIndex:]...)...)
+					fmt.Print("Current Queue :")
+					for _, c := range q.customers {
+						fmt.Print(c.priority, " ")
+					}
+					fmt.Println()
+
 				}
 
 			}
