@@ -43,7 +43,7 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 	retryPolicy := &cadence.RetryPolicy{
 		InitialInterval:    time.Second,
 		BackoffCoefficient: 2,
-		MaximumInterval:    time.Minute * 5,
+		MaximumInterval:    time.Minute * 50,
 		ExpirationInterval: time.Minute * 10,
 		MaximumAttempts:    5,
 	}
