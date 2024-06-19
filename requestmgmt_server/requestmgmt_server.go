@@ -43,6 +43,7 @@ type RequestBody struct {
 var dequeuedTasks []RequestBody
 var enqueuedTasks []RequestBody
 var mu sync.Mutex
+var kd sync.Mutex
 
 func sendRequest(requestBody RequestBody, url string) {
 	requestBodyBytes, err := json.Marshal(requestBody)
@@ -81,15 +82,15 @@ func rpc1(ctx context.Context, workflow_id string, rid string, id int32) (string
 	switch id {
 	case 1, 4:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q1)
-		Q1.SortCustomers()
+		//Q1.SortCustomers()
 		return ans, err
 	case 2, 5:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q2)
-		Q2.SortCustomers()
+		//	Q2.SortCustomers()
 		return ans, err
 	case 3, 6:
 		ans, err := rpc_function1(ctx, workflow_id, id, rid, &Q3)
-		Q3.SortCustomers()
+		//Q3.SortCustomers()
 		return ans, err
 	default:
 		return "Error Service not available", errors.New("unsupported service")
@@ -97,15 +98,53 @@ func rpc1(ctx context.Context, workflow_id string, rid string, id int32) (string
 }
 
 func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string, q *Queue.Queue) (string, error) {
-	for q.GetLength() >= q.Size/2 {
-		time.Sleep(time.Microsecond)
-	}
 
-	customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now())
-	ans := fmt.Sprintf("Enqueued at %s id %d", time.Now(), id)
-	_, err := q.Enqueue(customer1)
-	if err != nil {
-		panic(err)
+	k := q.GetLength()
+
+	switch id {
+	case 1:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 1)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+	case 4:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 0)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+	case 2:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 1)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+	case 5:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 0)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+	case 3:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 1)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+	case 6:
+		customer1 := Queue.New(workflow_id, rid, ctx, id, time.Now(), k, 0)
+
+		_, err := q.Enqueue(customer1)
+		if err != nil {
+			panic(err)
+		}
+
 	}
 
 	request1 := RequestBody{
@@ -116,7 +155,8 @@ func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string
 	enqueuedTasks = append(enqueuedTasks, request1)
 	mu.Unlock()
 
-	return ans, err
+	return "", nil
+	//return ans, err
 }
 
 func enqueuedTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,12 +198,12 @@ func enqueuedTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	go worker1()
-	go worker2()
-	go worker3()
+	//go worker2()
+	// go worker3()
 
 	go Q1.MoveToFrontIfOverdue(4)
-	go Q2.MoveToFrontIfOverdue(5)
-	go Q3.MoveToFrontIfOverdue(6)
+	// go Q2.MoveToFrontIfOverdue(5)
+	//go Q3.MoveToFrontIfOverdue(6)
 
 	log.Println("All workers ready")
 	lis, err := net.Listen("tcp", port)
@@ -241,6 +281,7 @@ func worker1() {
 			task_counter1++
 			go NetworkingServiceProcessing()
 			time.Sleep(time.Millisecond * 100)
+
 		} else {
 			time.Sleep(time.Second)
 		}
@@ -270,34 +311,6 @@ func worker3() {
 		}
 	}
 }
-
-func PrivateCloudEnterpriseServiceProcessing() {
-	response1, _, _, priority, _, err1 := Q2.Dequeue()
-	if err1 == nil {
-		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
-		request1 := RequestBody{
-			WorkID:     response1,
-			PriorityID: int(priority),
-		}
-		mu.Lock()
-		dequeuedTasks = append(dequeuedTasks, request1)
-		for i, task := range enqueuedTasks {
-			if task.WorkID == response1 {
-				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
-				break
-			}
-		}
-		mu.Unlock()
-
-		time.Sleep(time.Second * 10)
-
-		sendRequest(request1, "http://localhost:8090/endpoint2")
-
-		time.Sleep(time.Millisecond)
-	}
-	task_counter2--
-}
-
 func NetworkingServiceProcessing() {
 	response2, _, _, priority, _, err2 := Q1.Dequeue()
 	if err2 == nil {
@@ -317,7 +330,7 @@ func NetworkingServiceProcessing() {
 			}
 		}
 		mu.Unlock()
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 30)
 
 		sendRequest(request1, "http://localhost:8090/endpoint1")
 
@@ -326,11 +339,38 @@ func NetworkingServiceProcessing() {
 	task_counter1--
 }
 
+func PrivateCloudEnterpriseServiceProcessing() {
+	response1, _, _, priority, _, err1 := Q2.Dequeue()
+	if err1 == nil {
+		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
+		request1 := RequestBody{
+			WorkID:     response1,
+			PriorityID: int(priority),
+		}
+		mu.Lock()
+		dequeuedTasks = append(dequeuedTasks, request1)
+		for i, task := range enqueuedTasks {
+			if task.WorkID == response1 {
+				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
+				break
+			}
+		}
+		mu.Unlock()
+
+		time.Sleep(time.Second * 30)
+
+		sendRequest(request1, "http://localhost:8090/endpoint2")
+
+		time.Sleep(time.Millisecond)
+	}
+	task_counter2--
+}
+
 func BlockStorageServiceProcessing() {
 	response3, _, _, priority, _, err3 := Q3.Dequeue()
 	if err3 == nil {
 		fmt.Printf("WID: %s  Priority: %v\n", response3, priority)
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 30)
 
 		request1 := RequestBody{
 			WorkID:     response3,
