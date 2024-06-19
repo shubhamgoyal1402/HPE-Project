@@ -35,6 +35,7 @@ func init() {
 	activity.Register(UnQuiesce)
 	activity.Register(deploy)
 	activity.Register(wait)
+	activity.Register(snapshot2)
 
 }
 
@@ -62,9 +63,9 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 	}
 
 	ao := workflow.ActivityOptions{
-		ScheduleToStartTimeout: time.Minute * 5,
-		StartToCloseTimeout:    time.Minute * 5,
-		HeartbeatTimeout:       time.Minute * 5,
+		ScheduleToStartTimeout: time.Minute * 50,
+		StartToCloseTimeout:    time.Minute * 50,
+		HeartbeatTimeout:       time.Minute * 50,
 		RetryPolicy:            retryPolicy,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
@@ -109,10 +110,18 @@ func CustomerWorkflow(ctx workflow.Context, id int) error {
 			logger.Error("Activity wait failed.", zap.Error(err4))
 			return err4
 		}
-		err3 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
+
+		err7 := workflow.ExecuteActivity(ctx, UnQuiesce, wid).Get(ctx, &Result)
 		currentState = "Unquiesce Process Started"
+		if err7 != nil {
+			logger.Error("Unquiece Failed", zap.Error(err7))
+			return err7
+		}
+
+		err3 := workflow.ExecuteActivity(ctx, snapshot2, wid).Get(ctx, &Result)
+		currentState = "Snapshot Process Started"
 		if err3 != nil {
-			logger.Error("Unquiece Failed", zap.Error(err3))
+			logger.Error("Snapshot Failed", zap.Error(err3))
 			return err3
 		}
 		currentState = "Data protection completed"
@@ -207,6 +216,23 @@ func setup(ctx context.Context, workflow_id string) error {
 
 	time.Sleep(time.Second * 5)
 	endpoint := "http://localhost:9090/Enviornment-setup"
+	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
+	if err != nil {
+		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
+		return err
+
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+
+}
+
+func snapshot2(ctx context.Context, workflow_id string) error {
+
+	time.Sleep(time.Second * 5)
+	endpoint := "http://localhost:9090/snapshot"
 	resp, err := http.Post(endpoint, "application/x-www-form-urlencoded", bytes.NewBufferString(""))
 	if err != nil {
 		fmt.Printf("Error posting to %s: %v\n", endpoint, err)
