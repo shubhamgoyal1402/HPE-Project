@@ -83,7 +83,6 @@
             text-align: center;
             margin: 0;
             margin-left: -90px;
-            /* Adjust this value to move the title */
         }
     </style>
 </head>
@@ -91,33 +90,36 @@
 <body>
     <div class="navbar">
         <a id="home-link" href="http://localhost:8080/form.html">Home</a>
-        <h1>QUEUE PROGRESS</h1>
+        <h1>COMPLETED REQUESTS</h1>
     </div>
-
-    <h2>Networking Service</h2>
+    <h2>Data Protection Service</h2>
     <table>
         <tr>
             <th>WorkFlow ID</th>
             <th>Priority</th>
+            <th>Updated Priority</th>
         </tr>
         {{range .NetworkingTasks}}
         <tr>
             <td>{{.WorkID}}</td>
             <td>{{isPrimePriority .PriorityID}}</td>
+            <td>{{flagStatus .Flag}}</td>
         </tr>
         {{end}}
     </table>
 
-    <h2>Private Cloud Enterprise Service</h2>
+    <h2>Cloud Deployment Service</h2>
     <table>
         <tr>
             <th>Workflow ID</th>
             <th>Priority</th>
+            <th>Updated Priority</th>
         </tr>
         {{range .CloudEnterpriseTasks}}
         <tr>
             <td>{{.WorkID}}</td>
             <td>{{isPrimePriority .PriorityID}}</td>
+            <td>{{flagStatus .Flag}}</td>
         </tr>
         {{end}}
     </table>
@@ -127,11 +129,13 @@
         <tr>
             <th>Workflow ID</th>
             <th>Priority</th>
+            <th>Updated Priority</th>
         </tr>
         {{range .BlockStorageTasks}}
         <tr>
             <td>{{.WorkID}}</td>
             <td>{{isPrimePriority .PriorityID}}</td>
+            <td>{{flagStatus .Flag}}</td>
         </tr>
         {{end}}
     </table>
