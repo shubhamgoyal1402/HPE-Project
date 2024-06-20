@@ -38,12 +38,12 @@ type RequestManagementServer struct {
 type RequestBody struct {
 	WorkID     string `json:"work_id"`
 	PriorityID int    `json:"p_id"`
+	Flag       int
 }
 
 var dequeuedTasks []RequestBody
-var enqueuedTasks []RequestBody
+
 var mu sync.Mutex
-var kd sync.Mutex
 
 func sendRequest(requestBody RequestBody, url string) {
 	requestBodyBytes, err := json.Marshal(requestBody)
@@ -147,55 +147,48 @@ func rpc_function1(ctx context.Context, workflow_id string, id int32, rid string
 
 	}
 
-	request1 := RequestBody{
-		WorkID:     workflow_id,
-		PriorityID: int(id),
-	}
 	mu.Lock()
-	enqueuedTasks = append(enqueuedTasks, request1)
 	mu.Unlock()
 
 	return "", nil
 	//return ans, err
 }
-
-func enqueuedTasksHandler(w http.ResponseWriter, r *http.Request) {
+func queueHandler(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
-
-	var networkingTasks, cloudEnterpriseTasks, blockStorageTasks []RequestBody
-	for _, task := range enqueuedTasks {
-		switch task.PriorityID {
-		case 1, 4:
-			networkingTasks = append(networkingTasks, task)
-		case 2, 5:
-			cloudEnterpriseTasks = append(cloudEnterpriseTasks, task)
-		case 3, 6:
-			blockStorageTasks = append(blockStorageTasks, task)
-		}
-	}
+	queueContents := make([]Queue.Customer, len(Q1.Customers))
+	copy(queueContents, Q1.Customers)
 
 	data := struct {
-		NetworkingTasks      []RequestBody
-		CloudEnterpriseTasks []RequestBody
-		BlockStorageTasks    []RequestBody
+		Customers []Queue.Customer
 	}{
-		NetworkingTasks:      networkingTasks,
-		CloudEnterpriseTasks: cloudEnterpriseTasks,
-		BlockStorageTasks:    blockStorageTasks,
+		Customers: queueContents,
 	}
 
-	tmpl := template.Must(template.New("enqueued_tasks.html").Funcs(template.FuncMap{
-		"isPrimePriority": isPrimePriority,
-	}).ParseFiles("enqueued_tasks.html"))
+	funcMap := template.FuncMap{
+		"isPrimePriority": isPP,
+		"flagStatus":      flagStatus,
+	}
 
+	tmpl := template.Must(template.New("queue.html").Funcs(funcMap).ParseFiles("queue.html"))
 	err := tmpl.Execute(w, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 }
 
+func flagStatus(flag int) string {
+	switch flag {
+	case 0:
+		return "Non-Prime"
+	case 1:
+		return "Prime"
+	default:
+		return "Unknown"
+	}
+}
 func main() {
 	go worker1()
 	//go worker2()
@@ -222,7 +215,7 @@ func main() {
 	}()
 
 	http.HandleFunc("/dequeuedTasks", dequeuedTasksHandler)
-	http.HandleFunc("/enqueuedTasks", enqueuedTasksHandler)
+	http.HandleFunc("/queue", queueHandler)
 	http.ListenAndServe(":9092", nil)
 	select {}
 }
@@ -237,7 +230,16 @@ func isPrimePriority(priorityID int) string {
 		return "Unknown"
 	}
 }
-
+func isPP(priority int32) string {
+	switch priority {
+	case 1, 2, 3:
+		return "Prime"
+	case 4, 5, 6:
+		return "Non-Prime"
+	default:
+		return "Unknown"
+	}
+}
 func dequeuedTasksHandler(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -266,6 +268,7 @@ func dequeuedTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("dequeued_tasks.html").Funcs(template.FuncMap{
 		"isPrimePriority": isPrimePriority,
+		"flagStatus":      flagStatus,
 	}).ParseFiles("dequeued_tasks.html"))
 
 	err := tmpl.Execute(w, data)
@@ -312,23 +315,18 @@ func worker3() {
 	}
 }
 func NetworkingServiceProcessing() {
-	response2, _, _, priority, _, err2 := Q1.Dequeue()
+	response2, _, _, priority, _, err2, flag := Q1.Dequeue()
 	if err2 == nil {
 		fmt.Printf("WID: %s  Priority: %v\n", response2, priority)
 
 		request1 := RequestBody{
 			WorkID:     response2,
 			PriorityID: int(priority),
+			Flag:       flag,
 		}
 
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
-		for i, task := range enqueuedTasks {
-			if task.WorkID == response2 {
-				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
-				break
-			}
-		}
 		mu.Unlock()
 		time.Sleep(time.Second * 30)
 
@@ -340,23 +338,18 @@ func NetworkingServiceProcessing() {
 }
 
 func PrivateCloudEnterpriseServiceProcessing() {
-	response1, _, _, priority, _, err1 := Q2.Dequeue()
+	response1, _, _, priority, _, err1, flag := Q2.Dequeue()
 	if err1 == nil {
 		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
 		request1 := RequestBody{
 			WorkID:     response1,
 			PriorityID: int(priority),
+			Flag:       flag,
 		}
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
-		for i, task := range enqueuedTasks {
-			if task.WorkID == response1 {
-				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
-				break
-			}
-		}
 		mu.Unlock()
-
+		fmt.Println(flag)
 		time.Sleep(time.Second * 30)
 
 		sendRequest(request1, "http://localhost:8090/endpoint2")
@@ -367,25 +360,21 @@ func PrivateCloudEnterpriseServiceProcessing() {
 }
 
 func BlockStorageServiceProcessing() {
-	response3, _, _, priority, _, err3 := Q3.Dequeue()
+	response3, _, _, priority, _, err3, flag := Q3.Dequeue()
 	if err3 == nil {
 		fmt.Printf("WID: %s  Priority: %v\n", response3, priority)
+		fmt.Println(flag)
 		time.Sleep(time.Second * 30)
 
 		request1 := RequestBody{
 			WorkID:     response3,
 			PriorityID: int(priority),
+			Flag:       flag,
 		}
 		sendRequest(request1, "http://localhost:8090/endpoint3")
 
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
-		for i, task := range enqueuedTasks {
-			if task.WorkID == response3 {
-				enqueuedTasks = append(enqueuedTasks[:i], enqueuedTasks[i+1:]...)
-				break
-			}
-		}
 		mu.Unlock()
 
 		time.Sleep(time.Millisecond)
