@@ -213,7 +213,7 @@ func (h *Service) start_worklfow(id int) (string, string) {
 
 	}
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	_, err4 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
