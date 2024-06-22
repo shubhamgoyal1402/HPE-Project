@@ -317,7 +317,7 @@ func worker3() {
 func NetworkingServiceProcessing() {
 	response2, _, _, priority, _, err2, flag := Q1.Dequeue()
 	if err2 == nil {
-		fmt.Printf("WID: %s  Priority: %v\n", response2, priority)
+		fmt.Printf("DEQUEUED: WID: %s  Priority: %v\n", response2, priority)
 
 		request1 := RequestBody{
 			WorkID:     response2,
@@ -328,7 +328,7 @@ func NetworkingServiceProcessing() {
 		mu.Lock()
 		dequeuedTasks = append(dequeuedTasks, request1)
 		mu.Unlock()
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Minute * 1)
 
 		sendRequest(request1, "http://localhost:8090/endpoint1")
 
@@ -340,7 +340,7 @@ func NetworkingServiceProcessing() {
 func PrivateCloudEnterpriseServiceProcessing() {
 	response1, _, _, priority, _, err1, flag := Q2.Dequeue()
 	if err1 == nil {
-		fmt.Printf("WID: %s  Priority: %v\n", response1, priority)
+		fmt.Printf("WID: %s  Priority: %v TimeStamp: %s\n", response1, priority, time.Now())
 		request1 := RequestBody{
 			WorkID:     response1,
 			PriorityID: int(priority),
