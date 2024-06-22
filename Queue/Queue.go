@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 )
@@ -36,14 +35,6 @@ type ByPriority struct {
 	offset    int
 }
 
-func (a ByPriority) Len() int { return len(a.customers) - a.offset }
-func (a ByPriority) Less(i, j int) bool {
-	return a.customers[a.offset+i].Priority < a.customers[a.offset+j].Priority
-}
-func (a ByPriority) Swap(i, j int) {
-	a.customers[a.offset+i], a.customers[a.offset+j] = a.customers[a.offset+j], a.customers[a.offset+i]
-}
-
 type Queue struct {
 	Size          int
 	Customers     []Customer
@@ -73,7 +64,7 @@ func (q *Queue) Enqueue(c Customer) (bool, error) {
 		q.Customers = append(q.Customers[:insertIndex], append([]Customer{c}, q.Customers[insertIndex:]...)...)
 	}
 
-	fmt.Printf("wid:%s pid: %d pos:%d time:%s\n", c.Wid, c.Priority, c.leno, c.timestamp)
+	fmt.Printf("ENQUEUED: wid:%s pid: %d pos:%d time:%s\n", c.Wid, c.Priority, c.leno, c.timestamp)
 	fmt.Print("Queue Sorted:")
 	for i := 0; i < len(q.Customers); i++ {
 		fmt.Print(q.Customers[i].Priority, " ")
@@ -127,13 +118,6 @@ func (q *Queue) IsEmpty() bool {
 	return len(q.Customers) == 0
 }
 
-func (q *Queue) SortCustomers() {
-	q.mutex.Lock() // Lock for concurrency safety
-	defer q.mutex.Unlock()
-
-	sort.Sort(ByPriority{q.Customers, q.overdueOffset})
-}
-
 func (q *Queue) MoveToFrontIfOverdue(id int32) {
 	for {
 		time.Sleep(time.Millisecond * 1)
@@ -141,13 +125,13 @@ func (q *Queue) MoveToFrontIfOverdue(id int32) {
 		q.mutex.Lock()
 
 		for i := 0; i < len(q.Customers); i++ {
-			if q.Customers[i].Flag == 0 && time.Since(q.Customers[i].timestamp) > 19*time.Second {
+			if q.Customers[i].Flag == 0 && time.Since(q.Customers[i].timestamp) > 20*time.Second {
 				// Extract the overdue customer
 				q.Customers[i].Flag = 1
 				overdueCustomer := q.Customers[i]
 				overdueCustomer.Flag = 1
 
-				// Find the insertion position
+				//If Non prime member came before prime member
 				insertIndex := -1
 				for j := 0; j < i; j++ {
 					if q.Customers[j].Priority == 1 && q.Customers[j].timestamp.After(overdueCustomer.timestamp) {
@@ -156,7 +140,7 @@ func (q *Queue) MoveToFrontIfOverdue(id int32) {
 					}
 				}
 
-				// Only move the customer if a valid insertion index was found
+				// Put the non prime member in corect position
 				if insertIndex != -1 {
 					// Remove the overdue customer from the current position
 					q.Customers = append(q.Customers[:i], q.Customers[i+1:]...)
