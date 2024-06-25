@@ -9,7 +9,7 @@ import (
 
 const cadenceCLIImage = "ubercadence/cli:master"
 const cadenceAddress = "host.docker.internal:7933"
-const domain = "day56-domain"
+const domain = "final3-domain"
 const state = "current_state"
 
 func main() {
