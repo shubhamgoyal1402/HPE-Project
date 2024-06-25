@@ -180,15 +180,6 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		ExecutionStartToCloseTimeout: time.Minute * 30,
 	}
 
-	/*req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, id)
-
-	if err != nil {
-
-		h.logger.Error("Service not available ")
-		return "", ""
-
-	} */
-
 	req, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err != nil {
@@ -197,6 +188,7 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		return "", ""
 
 	}
+
 	_, err2 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err2 != nil {
@@ -212,8 +204,6 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		return "", ""
 
 	}
-
-	time.Sleep(4 * time.Second)
 
 	_, err4 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
@@ -248,7 +238,7 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		return "", ""
 
 	}
-	_, err8 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+	_, err8 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
 	if err8 != nil {
 
@@ -256,7 +246,7 @@ func (h *Service) start_worklfow(id int) (string, string) {
 		return "", ""
 
 	}
-	_, err9 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+	_, err9 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
 
 	if err9 != nil {
 
@@ -267,30 +257,6 @@ func (h *Service) start_worklfow(id int) (string, string) {
 	_, err10 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
 
 	if err10 != nil {
-
-		h.logger.Error("Service not available ")
-		return "", ""
-
-	}
-	_, err11 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
-
-	if err11 != nil {
-
-		h.logger.Error("Service not available ")
-		return "", ""
-
-	}
-	_, err12 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
-
-	if err12 != nil {
-
-		h.logger.Error("Service not available ")
-		return "", ""
-
-	}
-	_, err13 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
-
-	if err13 != nil {
 
 		h.logger.Error("Service not available ")
 		return "", ""
@@ -308,14 +274,30 @@ func (h *Service) start_worklfow2(id int) (string, string) {
 		ExecutionStartToCloseTimeout: time.Minute * 50,
 	}
 
-	ans, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 4)
+	ans, err := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 6)
 
 	if err != nil {
 
 		return "", ""
 
 	}
-	_, err13 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+	_, err9 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 6)
+
+	if err9 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err10 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 3)
+
+	if err10 != nil {
+
+		h.logger.Error("Service not available ")
+		return "", ""
+
+	}
+	_, err13 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 3)
 
 	if err13 != nil {
 
@@ -323,7 +305,7 @@ func (h *Service) start_worklfow2(id int) (string, string) {
 		return "", ""
 
 	}
-	_, err14 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow, 1)
+	_, err14 := h.cadenceAdapter.CadenceClient.StartWorkflow(context.Background(), wo, workflows.CustomerWorkflow2, 3)
 
 	if err14 != nil {
 
