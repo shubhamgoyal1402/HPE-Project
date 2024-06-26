@@ -203,6 +203,7 @@
         <navbar>
             <a id="home-link" href="http://localhost:8080/form.html">Home</a>
             <a id="progress-link" href="http://localhost:9095">Track</a>
+            <a id="queue-progress-link" href="http://localhost:9092/dequeuedTasks">Queue Progress</a>
         </navbar>
         <div>
             <div class="logo">
@@ -271,11 +272,14 @@
             const currentLocation = window.location.href;
             const homeLink = document.getElementById("home-link");
             const progressLink = document.getElementById("progress-link");
+            const queueProgressLink = document.getElementById("queue-progress-link");
 
             if (currentLocation.includes("form.html")) {
                 homeLink.classList.add("active");
             } else if (currentLocation.includes("index.html")) {
                 progressLink.classList.add("active");
+            } else if (currentLocation.includes("dequeuedTasks")) {
+                queueProgressLink.classList.add("active");
             }
         });
     </script>
