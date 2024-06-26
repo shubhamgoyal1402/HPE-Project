@@ -80,14 +80,14 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 		return err2
 	}
 	err3 := workflow.ExecuteActivity(ctx, subscriptionDetails, wid).Get(ctx, &Result)
-	currentState = "Getting Subscription Details"
+	currentState = "Nova"
 	if err3 != nil {
 		logger.Error("Subscription Failed", zap.Error(err3))
 		return err3
 	}
 
 	err := workflow.ExecuteActivity(ctx, Activity3, wid, rid, id).Get(ctx, &Result)
-	currentState = "Request enqueued for volume provision"
+	currentState = "Request for VM "
 	if err != nil {
 		logger.Error("Activity failed.", zap.Error(err))
 		return err
@@ -101,12 +101,12 @@ func CustomerWorkflow2(ctx workflow.Context, id int) error {
 	}
 
 	err4 := workflow.ExecuteActivity(ctx, blockStorage, wid).Get(ctx, &Result)
-	currentState = "Block Storage Granted"
+	currentState = "Waiting for instance"
 	if err4 != nil {
 		logger.Error("Activity failed.", zap.Error(err4))
 		return err4
 	}
-	currentState = "Block Storage Granted"
+	currentState = "VM Deployed"
 	logger.Info("Workflow completed.", zap.String("Result", Result))
 
 	return nil
