@@ -12,3 +12,14 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+
+  service-server:
+    build:
+      context: ./../ServiceServer
+      dockerfile: ./../ServiceServer/service-server.dockerfile
+    restart: always
+    ports:
+      - "8090:8090"
+    deploy:
+      mode: replicated
+      replicas: 1
