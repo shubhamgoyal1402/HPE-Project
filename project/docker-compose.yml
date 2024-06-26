@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+
+  activity-server:
+    build:
+      context: ./../activity-server
+      dockerfile: ./../activity-server/activity-server.dockerfile
+    restart: always
+    ports:
+      - "9090:9090"
+    deploy:
+      mode: replicated
+      replicas: 1
